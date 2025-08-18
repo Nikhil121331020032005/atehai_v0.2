@@ -1,4 +1,4 @@
-import type { Category, Expense, Budget, CategoryName, BorrowLend, Emi, Income } from './types';
+import type { Category, Expense, Budget, CategoryName, BorrowLend, Emi, Income, EmiCategory, IncomeSource } from './types';
 import {
   ShoppingCart,
   Zap,
@@ -58,11 +58,15 @@ export const MOCK_BORROW_LEND: BorrowLend[] = [
   { id: 'bl3', type: 'borrow', person: 'Local Bank', amount: 10000, date: format(subDays(new Date(), 90), 'yyyy-MM-dd'), status: 'Paid', dueDate: format(subDays(new Date(), 10), 'yyyy-MM-dd') },
 ];
 
+export const EMI_CATEGORIES: EmiCategory[] = ['Home Loan', 'Car Loan', 'Gadget', 'Other'];
+
 export const MOCK_EMIS: Emi[] = [
     { id: 'emi1', name: 'MacBook Pro', category: 'Gadget', amount: 250, dueDate: '5th of every month', tenure: 6 },
     { id: 'emi2', name: 'Honda Civic', category: 'Car Loan', amount: 450, dueDate: '15th of every month', tenure: 24 },
     { id: 'emi3', name: 'Apartment', category: 'Home Loan', amount: 1500, dueDate: '1st of every month', tenure: 180 },
 ];
+
+export const INCOME_SOURCES: IncomeSource[] = ['Fixed Deposit', 'Recurring Deposit', 'Other'];
 
 export const MOCK_INCOME: Income[] = [
     { id: 'inc1', source: 'Fixed Deposit', amount: 150, date: format(subDays(new Date(), 10), 'yyyy-MM-dd'), bank: 'Capital One' },

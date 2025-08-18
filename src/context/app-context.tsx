@@ -15,6 +15,14 @@ interface AppContextType {
   updateBudgets: (newBudgets: Budget[]) => void;
   setCurrency: (currency: Currency) => void;
   isLoading: boolean;
+  addBorrowLend: (item: Omit<BorrowLend, 'id' | 'status' | 'date'>) => void;
+  updateBorrowLendStatus: (id: string, status: 'Paid' | 'Pending') => void;
+  deleteBorrowLend: (id: string) => void;
+  addEmi: (item: Omit<Emi, 'id'>) => void;
+  updateEmi: (id: string, updates: Partial<Emi>) => void;
+  deleteEmi: (id: string) => void;
+  addIncome: (item: Omit<Income, 'id' | 'date'>) => void;
+  deleteIncome: (id: string) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -57,46 +65,79 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  useEffect(() => {
-    if (!isLoading) localStorage.setItem('expenses', JSON.stringify(expenses));
-  }, [expenses, isLoading]);
-
-  useEffect(() => {
-    if (!isLoading) localStorage.setItem('budgets', JSON.stringify(budgets));
-  }, [budgets, isLoading]);
-
-  useEffect(() => {
-    if (!isLoading) localStorage.setItem('currency', JSON.stringify(currency));
-  }, [currency, isLoading]);
-
-  useEffect(() => {
-    if (!isLoading) localStorage.setItem('borrowLend', JSON.stringify(borrowLend));
-  }, [borrowLend, isLoading]);
-
-  useEffect(() => {
-    if (!isLoading) localStorage.setItem('emis', JSON.stringify(emis));
-  }, [emis, isLoading]);
-
-  useEffect(() => {
-    if (!isLoading) localStorage.setItem('income', JSON.stringify(income));
-  }, [income, isLoading]);
-
+  useEffect(() => { if (!isLoading) localStorage.setItem('expenses', JSON.stringify(expenses)); }, [expenses, isLoading]);
+  useEffect(() => { if (!isLoading) localStorage.setItem('budgets', JSON.stringify(budgets)); }, [budgets, isLoading]);
+  useEffect(() => { if (!isLoading) localStorage.setItem('currency', JSON.stringify(currency)); }, [currency, isLoading]);
+  useEffect(() => { if (!isLoading) localStorage.setItem('borrowLend', JSON.stringify(borrowLend)); }, [borrowLend, isLoading]);
+  useEffect(() => { if (!isLoading) localStorage.setItem('emis', JSON.stringify(emis)); }, [emis, isLoading]);
+  useEffect(() => { if (!isLoading) localStorage.setItem('income', JSON.stringify(income)); }, [income, isLoading]);
 
   const addExpense = (expense: Omit<Expense, 'id'>) => {
     const newExpense = { ...expense, id: new Date().toISOString() };
     setExpenses(prev => [newExpense, ...prev]);
   };
 
-  const updateBudgets = (newBudgets: Budget[]) => {
-    setBudgets(newBudgets);
+  const updateBudgets = (newBudgets: Budget[]) => setBudgets(newBudgets);
+  const handleSetCurrency = (c: Currency) => setCurrency(c);
+
+  // Borrow & Lend Management
+  const addBorrowLend = (item: Omit<BorrowLend, 'id' | 'status' | 'date'>) => {
+    const newItem: BorrowLend = {
+      ...item,
+      id: new Date().toISOString(),
+      status: 'Pending',
+      date: new Date().toISOString().split('T')[0],
+    };
+    setBorrowLend(prev => [newItem, ...prev]);
   };
-  
-  const handleSetCurrency = (c: Currency) => {
-    setCurrency(c);
+  const updateBorrowLendStatus = (id: string, status: 'Paid' | 'Pending') => {
+    setBorrowLend(prev => prev.map(item => item.id === id ? { ...item, status } : item));
   };
+  const deleteBorrowLend = (id: string) => setBorrowLend(prev => prev.filter(item => item.id !== id));
+
+  // EMI Management
+  const addEmi = (item: Omit<Emi, 'id'>) => {
+    const newEmi = { ...item, id: new Date().toISOString() };
+    setEmis(prev => [newEmi, ...prev]);
+  };
+  const updateEmi = (id: string, updates: Partial<Emi>) => {
+    setEmis(prev => prev.map(emi => emi.id === id ? { ...emi, ...updates } : emi));
+  };
+  const deleteEmi = (id: string) => setEmis(prev => prev.filter(item => item.id !== id));
+
+  // Income Management
+  const addIncome = (item: Omit<Income, 'id' | 'date'>) => {
+    const newIncome = {
+        ...item,
+        id: new Date().toISOString(),
+        date: new Date().toISOString().split('T')[0]
+    };
+    setIncome(prev => [newIncome, ...prev]);
+  }
+  const deleteIncome = (id: string) => setIncome(prev => prev.filter(item => item.id !== id));
+
 
   return (
-    <AppContext.Provider value={{ expenses, budgets, borrowLend, emis, income, currency, addExpense, updateBudgets, setCurrency: handleSetCurrency, isLoading }}>
+    <AppContext.Provider value={{
+      expenses,
+      budgets,
+      borrowLend,
+      emis,
+      income,
+      currency,
+      addExpense,
+      updateBudgets,
+      setCurrency: handleSetCurrency,
+      isLoading,
+      addBorrowLend,
+      updateBorrowLendStatus,
+      deleteBorrowLend,
+      addEmi,
+      updateEmi,
+      deleteEmi,
+      addIncome,
+      deleteIncome,
+    }}>
       {children}
     </AppContext.Provider>
   );
