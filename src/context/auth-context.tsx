@@ -2,7 +2,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
-import { onAuthStateChanged, type User, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import { onAuthStateChanged, type User, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, sendPasswordResetEmail } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { useRouter, usePathname } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -15,6 +15,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<any>;
   signup: (email: string, password: string) => Promise<any>;
   logout: () => Promise<any>;
+  sendPasswordResetEmail: (email: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -28,17 +29,15 @@ const createInitialUserData = async (user: User) => {
     if (!userDoc.exists()) {
         const batch = writeBatch(db);
         
-        // Set up the main user document with default profile info
         batch.set(userDocRef, {
             email: user.email,
             createdAt: new Date().toISOString(),
             currency: 'USD',
         });
 
-        // Set up default budgets in the 'budgets' subcollection
         const budgetsColRef = collection(userDocRef, 'budgets');
         MOCK_BUDGETS.forEach(budget => {
-            const newBudgetRef = doc(budgetsColRef); // Creates a new doc with a random ID
+            const newBudgetRef = doc(budgetsColRef);
             batch.set(newBudgetRef, budget);
         });
 
@@ -71,9 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const isPublicRoute = publicRoutes.includes(pathname);
 
-    if (!user && !isPublicRoute) {
-      router.push('/login');
-    } else if (user && isPublicRoute) {
+    if (user && isPublicRoute) {
       router.push('/');
     }
   }, [user, isLoading, pathname, router]);
@@ -91,9 +88,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return signOut(auth);
   }
 
-  const value = { user, isLoading, login, signup, logout };
+  const handleSendPasswordResetEmail = (email: string) => {
+    return sendPasswordResetEmail(auth, email);
+  }
 
-  if (isLoading || (!user && !publicRoutes.includes(pathname))) {
+  const value = { user, isLoading, login, signup, logout, sendPasswordResetEmail: handleSendPasswordResetEmail };
+
+  if (isLoading) {
     return (
       <div className="flex h-screen w-screen items-center justify-center">
         <div className="w-64 space-y-4">

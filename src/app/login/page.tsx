@@ -21,19 +21,37 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Logo } from '@/components/logo';
 import { useToast } from '@/hooks/use-toast';
+import { Eye, EyeOff } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 const loginSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address.' }),
   password: z.string().min(6, { message: 'Password must be at least 6 characters long.' }),
 });
 
+const forgotPasswordSchema = z.object({
+  email: z.string().email({ message: 'Please enter a valid email to send a reset link.' }),
+});
+
 export default function LoginPage() {
-  const { login } = useAuth();
+  const { login, sendPasswordResetEmail } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
 
-  const form = useForm<z.infer<typeof loginSchema>>({
+  const loginForm = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
       email: '',
@@ -41,7 +59,14 @@ export default function LoginPage() {
     },
   });
 
-  const onSubmit = async (values: z.infer<typeof loginSchema>) => {
+  const forgotPasswordForm = useForm<z.infer<typeof forgotPasswordSchema>>({
+    resolver: zodResolver(forgotPasswordSchema),
+    defaultValues: {
+      email: '',
+    },
+  });
+
+  const onLoginSubmit = async (values: z.infer<typeof loginSchema>) => {
     setIsLoading(true);
     try {
       await login(values.email, values.password);
@@ -50,6 +75,27 @@ export default function LoginPage() {
       toast({
         variant: 'destructive',
         title: 'Login Failed',
+        description: error.message,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const onForgotPasswordSubmit = async (values: z.infer<typeof forgotPasswordSchema>) => {
+    setIsLoading(true);
+    try {
+      await sendPasswordResetEmail(values.email);
+      toast({
+        title: 'Password Reset Email Sent',
+        description: 'Please check your inbox for instructions to reset your password.',
+      });
+      setIsForgotPasswordOpen(false);
+      forgotPasswordForm.reset();
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Error Sending Email',
         description: error.message,
       });
     } finally {
@@ -68,10 +114,10 @@ export default function LoginPage() {
           <CardDescription>Enter your credentials to access your dashboard.</CardDescription>
         </CardHeader>
         <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <Form {...loginForm}>
+            <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-6">
               <FormField
-                control={form.control}
+                control={loginForm.control}
                 name="email"
                 render={({ field }) => (
                   <FormItem>
@@ -84,13 +130,66 @@ export default function LoginPage() {
                 )}
               />
               <FormField
-                control={form.control}
+                control={loginForm.control}
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
+                    <div className="flex items-center justify-between">
+                        <FormLabel>Password</FormLabel>
+                        <AlertDialog open={isForgotPasswordOpen} onOpenChange={setIsForgotPasswordOpen}>
+                        <AlertDialogTrigger asChild>
+                            <Button variant="link" type="button" className="p-0 h-auto text-xs">
+                                Forgot Password?
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <Form {...forgotPasswordForm}>
+                                <form onSubmit={forgotPasswordForm.handleSubmit(onForgotPasswordSubmit)}>
+                                    <AlertDialogHeader>
+                                    <AlertDialogTitle>Reset Your Password</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        Enter your email address and we will send you a link to reset your password.
+                                    </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <div className="my-4">
+                                    <FormField
+                                        control={forgotPasswordForm.control}
+                                        name="email"
+                                        render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Email</FormLabel>
+                                            <FormControl>
+                                            <Input type="email" placeholder="you@example.com" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                        )}
+                                    />
+                                    </div>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel type="button">Cancel</AlertDialogCancel>
+                                        <AlertDialogAction type="submit" disabled={isLoading}>
+                                            {isLoading ? 'Sending...' : 'Send Reset Link'}
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </form>
+                            </Form>
+                        </AlertDialogContent>
+                        </AlertDialog>
+                    </div>
                     <FormControl>
-                      <Input type="password" placeholder="••••••••" {...field} />
+                      <div className="relative">
+                        <Input type={showPassword ? 'text' : 'password'} placeholder="••••••••" {...field} />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 text-muted-foreground"
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
+                          {showPassword ? <EyeOff /> : <Eye />}
+                        </Button>
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>

@@ -21,6 +21,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Logo } from '@/components/logo';
 import { useToast } from '@/hooks/use-toast';
+import { Eye, EyeOff } from 'lucide-react';
 
 const signupSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address.' }),
@@ -36,6 +37,8 @@ export default function SignupPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const form = useForm<z.infer<typeof signupSchema>>({
     resolver: zodResolver(signupSchema),
@@ -95,7 +98,19 @@ export default function SignupPage() {
                   <FormItem>
                     <FormLabel>Password</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="••••••••" {...field} />
+                        <div className="relative">
+                            <Input type={showPassword ? 'text' : 'password'} placeholder="••••••••" {...field} />
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 text-muted-foreground"
+                                onClick={() => setShowPassword(!showPassword)}
+                                tabIndex={-1}
+                            >
+                                {showPassword ? <EyeOff /> : <Eye />}
+                            </Button>
+                        </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -108,7 +123,19 @@ export default function SignupPage() {
                   <FormItem>
                     <FormLabel>Confirm Password</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="••••••••" {...field} />
+                        <div className="relative">
+                            <Input type={showConfirmPassword ? 'text' : 'password'} placeholder="••••••••" {...field} />
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 text-muted-foreground"
+                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                tabIndex={-1}
+                            >
+                                {showConfirmPassword ? <EyeOff /> : <Eye />}
+                            </Button>
+                        </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>

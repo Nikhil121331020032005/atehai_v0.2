@@ -19,6 +19,9 @@ import {
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { format, startOfMonth, isSameMonth, parseISO } from 'date-fns';
+import { MOCK_BUDGETS, MOCK_EXPENSES } from '@/lib/data';
+import { useToast } from '@/hooks/use-toast';
+import { useRouter } from 'next/navigation';
 
 interface AppContextType {
   expenses: Expense[];
@@ -54,6 +57,9 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppContextProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
+  const { toast } = useToast();
+  const router = useRouter();
+
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [borrowLend, setBorrowLend] = useState<BorrowLend[]>([]);
@@ -63,8 +69,18 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [currency, setCurrency] = useState<Currency>('USD');
   const [isLoading, setIsLoading] = useState(true);
+  
+  const clearState = () => {
+    setExpenses([]);
+    setBudgets([]);
+    setBorrowLend([]);
+    setEmis([]);
+    setIncome([]);
+    setGoals([]);
+    setProfile(null);
+    setCurrency('USD');
+  };
 
-  // Load data when user is authenticated
   useEffect(() => {
     if (user) {
       setIsLoading(true);
@@ -79,7 +95,6 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       };
 
       const unsubscribes = dataCollections.map(col => {
-        // For expenses, we only fetch for the current month
         const colRef = collection(db, 'users', user.uid, col);
         return onSnapshot(colRef, snapshot => {
           const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any[];
@@ -106,42 +121,49 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       return () => {
         unsubscribes.forEach(unsub => unsub());
         userProfileUnsubscribe();
+        clearState();
       };
     } else {
-      // Clear data when user logs out
-      setExpenses([]);
-      setBudgets([]);
-      setBorrowLend([]);
-      setEmis([]);
-      setIncome([]);
-      setGoals([]);
-      setProfile(null);
-      setCurrency('USD');
-      setIsLoading(true);
+      // Use mock data for logged-out users
+      clearState();
+      setExpenses(MOCK_EXPENSES);
+      setBudgets(MOCK_BUDGETS as any);
+      setIsLoading(false);
     }
   }, [user]);
 
+  const requireAuth = (action: Function) => {
+    return (...args: any[]) => {
+      if (!user) {
+        toast({
+          variant: "destructive",
+          title: "Authentication Required",
+          description: "Please log in or sign up to perform this action.",
+        });
+        router.push('/login');
+        return Promise.reject(new Error("User not authenticated"));
+      }
+      return action(...args);
+    };
+  };
+
   const addDocForUser = async (collectionName: string, data: object) => {
-    if (!user) throw new Error("User not authenticated");
-    await addDoc(collection(db, 'users', user.uid, collectionName), data);
+    await addDoc(collection(db, 'users', user!.uid, collectionName), data);
   };
   
   const deleteDocForUser = async (collectionName: string, docId: string) => {
-    if (!user) throw new Error("User not authenticated");
-    await deleteDoc(doc(db, 'users', user.uid, collectionName, docId));
+    await deleteDoc(doc(db, 'users', user!.uid, collectionName, docId));
   }
 
   const updateDocForUser = async (collectionName: string, docId: string, data: object) => {
-    if (!user) throw new Error("User not authenticated");
-    await updateDoc(doc(db, 'users', user.uid, collectionName, docId), data);
+    await updateDoc(doc(db, 'users', user!.uid, collectionName, docId), data);
   }
   
-  const addExpense = async (expense: Omit<Expense, 'id'>) => addDocForUser('expenses', expense);
+  const addExpense = requireAuth(async (expense: Omit<Expense, 'id'>) => addDocForUser('expenses', expense));
 
-  const updateBudgets = async (newBudgets: Pick<Budget, 'category' | 'amount'>[]) => {
-    if (!user) throw new Error("User not authenticated");
+  const updateBudgets = requireAuth(async (newBudgets: Pick<Budget, 'category' | 'amount'>[]) => {
     const batch = writeBatch(db);
-    const budgetsColRef = collection(db, 'users', user.uid, 'budgets');
+    const budgetsColRef = collection(db, 'users', user!.uid, 'budgets');
     
     const existingBudgetsSnapshot = await getDocs(budgetsColRef);
     const existingBudgetsMap = new Map(existingBudgetsSnapshot.docs.map(d => [d.data().category, d.id]));
@@ -149,34 +171,29 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     newBudgets.forEach(budget => {
         const docId = existingBudgetsMap.get(budget.category);
         if (docId) {
-            // If budget exists, update it
             const docRef = doc(budgetsColRef, docId);
             batch.update(docRef, { amount: budget.amount });
         } else {
-            // If budget doesn't exist, create it
             const newDocRef = doc(budgetsColRef);
             batch.set(newDocRef, { category: budget.category, amount: budget.amount });
         }
     });
 
     await batch.commit();
-  };
+  });
   
-  const handleSetCurrency = async (c: Currency) => {
-    if (!user) throw new Error("User not authenticated");
-    const userDocRef = doc(db, 'users', user.uid);
+  const handleSetCurrency = requireAuth(async (c: Currency) => {
+    const userDocRef = doc(db, 'users', user!.uid);
     await updateDoc(userDocRef, { currency: c });
     setCurrency(c);
-  };
+  });
 
-  // Profile Management
-  const updateProfile = async (data: Partial<Omit<Profile, 'email'>>, newAvatar?: File | null) => {
-    if (!user) throw new Error("User not authenticated");
-    const userDocRef = doc(db, 'users', user.uid);
+  const updateProfile = requireAuth(async (data: Partial<Omit<Profile, 'email'>>, newAvatar?: File | null) => {
+    const userDocRef = doc(db, 'users', user!.uid);
 
     let avatarUrl;
     if (newAvatar) {
-        const storageRef = ref(storage, `profile-pictures/${user.uid}`);
+        const storageRef = ref(storage, `profile-pictures/${user!.uid}`);
         await uploadBytes(storageRef, newAvatar);
         avatarUrl = await getDownloadURL(storageRef);
     }
@@ -189,15 +206,13 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     if (Object.keys(dataToUpdate).length > 0) {
         await updateDoc(userDocRef, dataToUpdate);
     }
-  };
+  });
 
-  // Income Management
-  const addIncome = async (item: Omit<Income, 'id'>) => addDocForUser('income', item);
-  const deleteIncome = async (id: string) => deleteDocForUser('income', id);
-  const updateIncomeStatus = async (id: string, status: IncomeStatus) => updateDocForUser('income', id, { status });
+  const addIncome = requireAuth(async (item: Omit<Income, 'id'>) => addDocForUser('income', item));
+  const deleteIncome = requireAuth(async (id: string) => deleteDocForUser('income', id));
+  const updateIncomeStatus = requireAuth(async (id: string, status: IncomeStatus) => updateDocForUser('income', id, { status }));
 
-  // Borrow & Lend Management
-  const addBorrowLend = async (item: Omit<BorrowLend, 'id' | 'status' | 'date'>) => {
+  const addBorrowLend = requireAuth(async (item: Omit<BorrowLend, 'id' | 'status' | 'date'>) => {
     const newItem: Omit<BorrowLend, 'id'> = {
       ...item,
       status: 'Pending',
@@ -213,9 +228,9 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
             category: 'Lending',
         });
     }
-  };
+  });
 
-  const updateBorrowLendStatus = async (id: string, status: 'Paid' | 'Pending') => {
+  const updateBorrowLendStatus = requireAuth(async (id: string, status: 'Paid' | 'Pending') => {
     const item = borrowLend.find(i => i.id === id);
     if (!item || item.status === status) return;
     await updateDocForUser('borrowLend', id, { status });
@@ -228,7 +243,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
             date: new Date().toISOString().split('T')[0],
             category: 'Lending',
           });
-        } else { // type === 'lend'
+        } else {
           await addIncome({
             source: 'Other',
             bank: `Repayment from ${item.person}`,
@@ -236,23 +251,21 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
             date: new Date().toISOString().split('T')[0],
             status: 'Received'
           });
-          // Add a negative expense to offset the original lending amount
           await addExpense({
             description: `Repayment from ${item.person}`,
-            amount: -item.amount, // Negative amount
+            amount: -item.amount,
             date: new Date().toISOString().split('T')[0],
             category: 'Lending'
           });
         }
       }
-  };
+  });
 
-  const deleteBorrowLend = async (id: string) => deleteDocForUser('borrowLend', id);
+  const deleteBorrowLend = requireAuth(async (id: string) => deleteDocForUser('borrowLend', id));
 
-  // EMI Management
-  const addEmi = async (item: Omit<Emi, 'id'>) => addDocForUser('emis', item);
-  const updateEmi = async (id: string, updates: Partial<Emi>) => updateDocForUser('emis', id, updates);
-  const payEmi = async (emi: Emi) => {
+  const addEmi = requireAuth(async (item: Omit<Emi, 'id'>) => addDocForUser('emis', item));
+  const updateEmi = requireAuth(async (id: string, updates: Partial<Emi>) => updateDocForUser('emis', id, updates));
+  const payEmi = requireAuth(async (emi: Emi) => {
     if (emi.tenure > 0) {
       await updateEmi(emi.id, { tenure: emi.tenure - 1 });
       await addExpense({
@@ -262,35 +275,31 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
         category: 'EMI'
       });
     }
-  };
-  const deleteEmi = async (id: string) => deleteDocForUser('emis', id);
+  });
+  const deleteEmi = requireAuth(async (id: string) => deleteDocForUser('emis', id));
 
-  // Goal Management
-  const addGoal = async (goal: Omit<Goal, 'id'>) => addDocForUser('goals', goal);
-  const updateGoal = async (id: string, updates: Partial<Goal>) => updateDocForUser('goals', id, updates);
-  const deleteGoal = async (id: string) => deleteDocForUser('goals', id);
+  const addGoal = requireAuth(async (goal: Omit<Goal, 'id'>) => addDocForUser('goals', goal));
+  const updateGoal = requireAuth(async (id: string, updates: Partial<Goal>) => updateDocForUser('goals', id, updates));
+  const deleteGoal = requireAuth(async (id: string) => deleteDocForUser('goals', id));
 
-  const resetMonthlyData = async () => {
-    if (!user) throw new Error("User not authenticated");
-
+  const resetMonthlyData = requireAuth(async () => {
     const batch = writeBatch(db);
     const collectionsToDelete = ['expenses', 'income', 'borrowLend'];
 
     for (const collectionName of collectionsToDelete) {
-      const colRef = collection(db, 'users', user.uid, collectionName);
+      const colRef = collection(db, 'users', user!.uid, collectionName);
       const snapshot = await getDocs(colRef);
       snapshot.docs.forEach(doc => batch.delete(doc.ref));
     }
 
-    // Reset current amount in goals
-    const goalsColRef = collection(db, 'users', user.uid, 'goals');
+    const goalsColRef = collection(db, 'users', user!.uid, 'goals');
     const goalsSnapshot = await getDocs(goalsColRef);
     goalsSnapshot.docs.forEach(doc => {
         batch.update(doc.ref, { currentAmount: 0 });
     });
 
     await batch.commit();
-  };
+  });
 
   return (
     <AppContext.Provider value={{
