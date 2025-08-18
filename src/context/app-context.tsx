@@ -45,15 +45,36 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     try {
-      const storedExpenses = localStorage.getItem('expenses');
       const storedBudgets = localStorage.getItem('budgets');
       const storedCurrency = localStorage.getItem('currency');
       const storedBorrowLend = localStorage.getItem('borrowLend');
       const storedEmis = localStorage.getItem('emis');
       const storedIncome = localStorage.getItem('income');
       const storedGoals = localStorage.getItem('goals');
+      const storedExpenseArchive = localStorage.getItem('expenseArchive');
+      const lastVisitedMonth = localStorage.getItem('lastVisitedMonth');
 
-      setExpenses(storedExpenses ? JSON.parse(storedExpenses) : MOCK_EXPENSES);
+      const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM format
+
+      let currentExpenses = [];
+      const expenseArchive = storedExpenseArchive ? JSON.parse(storedExpenseArchive) : {};
+
+      if (lastVisitedMonth && lastVisitedMonth !== currentMonth) {
+        // New month, archive old expenses
+        const oldExpenses = localStorage.getItem('expenses');
+        if (oldExpenses) {
+          expenseArchive[lastVisitedMonth] = JSON.parse(oldExpenses);
+          localStorage.setItem('expenseArchive', JSON.stringify(expenseArchive));
+        }
+        currentExpenses = []; // Start fresh
+      } else {
+        const storedExpenses = localStorage.getItem('expenses');
+        currentExpenses = storedExpenses ? JSON.parse(storedExpenses) : MOCK_EXPENSES;
+      }
+      
+      localStorage.setItem('lastVisitedMonth', currentMonth);
+      setExpenses(currentExpenses);
+
       setBudgets(storedBudgets ? JSON.parse(storedBudgets) : MOCK_BUDGETS);
       setCurrency(storedCurrency ? JSON.parse(storedCurrency) : 'USD');
       setBorrowLend(storedBorrowLend ? JSON.parse(storedBorrowLend) : MOCK_BORROW_LEND);
