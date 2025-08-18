@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAppContext } from '@/context/app-context';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -25,8 +25,13 @@ import {
 export function IncomeClient() {
   const { income, isLoading, currency, deleteIncome } = useAppContext();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isClient, setIsClient] = useState(false);
 
-  if (isLoading) {
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  if (isLoading || !isClient) {
     return <PageSkeleton />;
   }
 
