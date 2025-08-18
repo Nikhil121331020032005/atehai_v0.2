@@ -1,6 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 
-export type Currency = 'USD' | 'INR' | 'EUR' | 'GBP' | 'JPY';
+export type Currency = 'USD' | 'INR' | 'EUR' | 'GBP' | 'JPY' | 'AUD' | 'CAD' | 'CHF' | 'CNY' | 'BRL' | 'ZAR';
 
 export type CategoryName = 
   | 'Groceries' 

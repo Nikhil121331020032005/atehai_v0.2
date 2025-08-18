@@ -11,6 +11,12 @@ const CURRENCIES: { value: Currency, label: string }[] = [
     { value: 'EUR', label: 'EUR (€)' },
     { value: 'GBP', label: 'GBP (£)' },
     { value: 'JPY', label: 'JPY (¥)' },
+    { value: 'AUD', label: 'AUD (A$)' },
+    { value: 'CAD', label: 'CAD (C$)' },
+    { value: 'CHF', label: 'CHF (Fr)' },
+    { value: 'CNY', label: 'CNY (¥)' },
+    { value: 'BRL', label: 'BRL (R$)' },
+    { value: 'ZAR', label: 'ZAR (R)' },
 ]
 
 export function CurrencySelector() {
