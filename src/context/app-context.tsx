@@ -54,6 +54,7 @@ interface AppContextType {
   updateProfile: (data: Partial<Omit<Profile, 'email'>>, newAvatar?: File | null) => Promise<void>;
   resetMonthlyData: () => Promise<void>;
   upgradeToPremium: () => Promise<void>;
+  cancelPremium: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -334,6 +335,14 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
         description: 'You are now a premium member.',
     });
   });
+  
+  const cancelPremium = requireAuth(async () => {
+    const userDocRef = doc(db, 'users', user!.uid);
+    await updateDoc(userDocRef, {
+      isPremium: false,
+      subscriptionEndDate: null
+    });
+  });
 
   return (
     <AppContext.Provider value={{
@@ -365,6 +374,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       updateProfile,
       resetMonthlyData,
       upgradeToPremium,
+      cancelPremium
     }}>
       {children}
     </AppContext.Provider>

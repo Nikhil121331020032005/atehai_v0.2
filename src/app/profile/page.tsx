@@ -38,7 +38,7 @@ import Link from "next/link";
 
 export default function ProfilePage() {
     const { user, logout } = useAuth();
-    const { profile, isLoading, resetMonthlyData } = useAppContext();
+    const { profile, isLoading, resetMonthlyData, cancelPremium } = useAppContext();
     const router = useRouter();
     const { toast } = useToast();
     const [archivedMonths, setArchivedMonths] = useState<string[]>([]);
@@ -78,6 +78,15 @@ export default function ProfilePage() {
             console.error(error);
         } finally {
             setIsResetting(false);
+        }
+    }
+
+    const handleCancelPremium = async () => {
+        try {
+            await cancelPremium();
+            toast({ title: 'Subscription Cancelled', description: 'Your premium membership has been deactivated.' });
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Cancellation Failed', description: 'Could not cancel your subscription. Please try again.' });
         }
     }
 
@@ -188,18 +197,34 @@ export default function ProfilePage() {
                             </CardTitle>
                             <CardDescription>Thank you for being a premium member.</CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-2">
+                        <CardContent className="space-y-4">
                            <div className="flex items-center justify-between text-sm border-b pb-2">
                                 <span className="text-muted-foreground">Status</span>
                                 <span className="font-medium text-primary">Active</span>
                             </div>
-                             <div className="flex items-center justify-between text-sm">
+                             <div className="flex items-center justify-between text-sm pt-2">
                                 <span className="text-muted-foreground">Renews On</span>
                                 <span className="font-medium">{profile.subscriptionEndDate ? format(parseISO(profile.subscriptionEndDate), 'PPP') : 'N/A'}</span>
                             </div>
-                            <p className="text-xs text-muted-foreground pt-2">
-                                Subscription management is handled by your payment provider.
-                            </p>
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button variant="destructive" className="w-full mt-2">Cancel Subscription</Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        This will cancel your premium subscription. You will lose access to premium features at the end of your billing period.
+                                    </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                    <AlertDialogCancel>Keep Subscription</AlertDialogCancel>
+                                    <AlertDialogAction onClick={handleCancelPremium} className="bg-destructive hover:bg-destructive/90">
+                                        Yes, Cancel
+                                    </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
                         </CardContent>
                     </Card>
                 )}
@@ -287,5 +312,3 @@ export default function ProfilePage() {
         </AppLayout>
     )
 }
-
-    
