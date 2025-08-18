@@ -1,7 +1,7 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { DollarSign, Wallet, PiggyBank } from 'lucide-react';
+import { DollarSign, Wallet, PiggyBank, Landmark } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { Progress } from '@/components/ui/progress';
 import { useAppContext } from '@/context/app-context';
@@ -9,16 +9,27 @@ import { useAppContext } from '@/context/app-context';
 type StatsCardsProps = {
   totalSpent: number;
   totalBudget: number;
-  remainingBudget: number;
+  totalIncome: number;
 };
 
-export function StatsCards({ totalSpent, totalBudget, remainingBudget }: StatsCardsProps) {
+export function StatsCards({ totalSpent, totalBudget, totalIncome }: StatsCardsProps) {
   const { currency } = useAppContext();
+  const remainingBudget = totalBudget - totalSpent;
   const spentPercentage = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
 
   return (
-    <div className="grid gap-4 md:grid-cols-3">
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Total Income</CardTitle>
+          <Landmark className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{formatCurrency(totalIncome, currency)}</div>
+          <p className="text-xs text-muted-foreground">this month</p>
+        </CardContent>
+      </Card>
+       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Total Spent</CardTitle>
           <DollarSign className="h-4 w-4 text-muted-foreground" />

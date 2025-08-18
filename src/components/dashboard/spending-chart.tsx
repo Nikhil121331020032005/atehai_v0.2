@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
+import { Pie, PieChart, ResponsiveContainer, Cell, Tooltip } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import type { Expense } from '@/lib/types';
 import { formatCurrency } from '@/lib/utils';
@@ -26,45 +26,46 @@ export function SpendingChart({ expenses }: SpendingChartProps) {
     return Object.entries(categorySpending)
       .map(([name, total]) => ({
         name,
-        total,
+        value: total,
         fill: CATEGORIES.find(c => c.name === name)?.color || '#9ca3af',
       }))
-      .sort((a, b) => b.total - a.total);
+      .sort((a, b) => b.value - a.value);
   }, [expenses]);
   
-  const handleBarClick = (data: any) => {
-    if (data && data.activePayload && data.activePayload.length > 0) {
-      const categoryName = data.activePayload[0].payload.name;
-      router.push(`/expenses/${categoryName}`);
+  const handlePieClick = (data: any) => {
+    if (data && data.name) {
+      router.push(`/expenses/${data.name}`);
     }
   };
 
   return (
     <Card className="h-full">
       <CardHeader>
-        <CardTitle>Spending by Category</CardTitle>
-        <CardDescription>An overview of your expenses this month. Click a bar for details.</CardDescription>
+        <CardTitle>Category Spending</CardTitle>
+        <CardDescription>A pie-chart view of your expenses. Click a slice for details.</CardDescription>
       </CardHeader>
       <CardContent>
         {data.length > 0 ? (
           <ResponsiveContainer width="100%" height={350}>
-            <BarChart data={data} margin={{ top: 5, right: 20, left: -10, bottom: 5 }} onClick={handleBarClick}>
-              <XAxis
-                dataKey="name"
-                stroke="#888888"
-                fontSize={12}
-                tickLine={false}
-                axisLine={false}
-              />
-              <YAxis
-                stroke="#888888"
-                fontSize={12}
-                tickLine={false}
-                axisLine={false}
-                tickFormatter={(value) => formatCurrency(value as number, currency).replace(/(\.00|,\d*)$/, '')}
-              />
+            <PieChart>
+              <Pie
+                data={data}
+                dataKey="value"
+                nameKey="name"
+                cx="50%"
+                cy="50%"
+                outerRadius={120}
+                fill="#8884d8"
+                onClick={handlePieClick}
+                labelLine={false}
+                label={({ name, percent, value }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+              >
+                 {data.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.fill} className="cursor-pointer" />
+                ))}
+              </Pie>
               <Tooltip
-                cursor={{ fill: 'hsl(var(--muted))', cursor: 'pointer' }}
+                cursor={{ fill: 'hsl(var(--muted))' }}
                 contentStyle={{
                   backgroundColor: 'hsl(var(--background))',
                   border: '1px solid hsl(var(--border))',
@@ -72,8 +73,7 @@ export function SpendingChart({ expenses }: SpendingChartProps) {
                 }}
                 formatter={(value: number) => [formatCurrency(value, currency), 'Total Spent']}
               />
-              <Bar dataKey="total" radius={[4, 4, 0, 0]} />
-            </BarChart>
+            </PieChart>
           </ResponsiveContainer>
         ) : (
           <div className="flex h-[350px] items-center justify-center">

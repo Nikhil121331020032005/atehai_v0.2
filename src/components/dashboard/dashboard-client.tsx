@@ -6,19 +6,22 @@ import { StatsCards } from './stats-cards';
 import { SpendingChart } from './spending-chart';
 import { RecentExpenses } from './recent-expenses';
 import { Skeleton } from '@/components/ui/skeleton';
+import { RecentIncome } from './recent-income';
+import { IncomeVsExpenseChart } from './income-vs-expense-chart';
 
 export default function DashboardClient() {
-  const { expenses, budgets, isLoading } = useAppContext();
+  const { expenses, budgets, income, isLoading } = useAppContext();
 
-  const { totalSpent, totalBudget, remainingBudget } = useMemo(() => {
+  const { totalSpent, totalBudget, totalIncome } = useMemo(() => {
     const spent = expenses.reduce((sum, expense) => sum + expense.amount, 0);
     const budget = budgets.reduce((sum, budget) => sum + budget.amount, 0);
+    const totalIncome = income.reduce((sum, item) => sum + item.amount, 0);
     return {
       totalSpent: spent,
       totalBudget: budget,
-      remainingBudget: budget - spent,
+      totalIncome: totalIncome,
     };
-  }, [expenses, budgets]);
+  }, [expenses, budgets, income]);
 
   if (isLoading) {
     return <DashboardSkeleton />;
@@ -29,15 +32,19 @@ export default function DashboardClient() {
       <StatsCards
         totalSpent={totalSpent}
         totalBudget={totalBudget}
-        remainingBudget={remainingBudget}
+        totalIncome={totalIncome}
       />
       <div className="grid gap-8 lg:grid-cols-5">
         <div className="lg:col-span-3">
-          <SpendingChart expenses={expenses} />
+            <IncomeVsExpenseChart expenses={expenses} income={income} />
         </div>
         <div className="lg:col-span-2">
-          <RecentExpenses expenses={expenses} />
+            <SpendingChart expenses={expenses} />
         </div>
+      </div>
+      <div className="grid gap-8 lg:grid-cols-2">
+        <RecentExpenses expenses={expenses} />
+        <RecentIncome income={income} />
       </div>
     </div>
   );
@@ -46,7 +53,8 @@ export default function DashboardClient() {
 function DashboardSkeleton() {
   return (
     <div className="flex flex-col gap-8">
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Skeleton className="h-28 rounded-lg" />
         <Skeleton className="h-28 rounded-lg" />
         <Skeleton className="h-28 rounded-lg" />
         <Skeleton className="h-28 rounded-lg" />
@@ -58,6 +66,10 @@ function DashboardSkeleton() {
         <div className="lg:col-span-2">
           <Skeleton className="h-96 rounded-lg" />
         </div>
+      </div>
+      <div className="grid gap-8 lg:grid-cols-2">
+        <Skeleton className="h-96 rounded-lg" />
+        <Skeleton className="h-96 rounded-lg" />
       </div>
     </div>
   );
