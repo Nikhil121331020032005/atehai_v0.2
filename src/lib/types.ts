@@ -87,4 +87,5 @@ export type Profile = {
     age?: number;
     gender?: 'Male' | 'Female' | 'Other' | 'Prefer not to say';
     email: string;
+    avatarUrl?: string;
 };

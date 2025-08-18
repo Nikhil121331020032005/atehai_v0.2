@@ -4,7 +4,7 @@
 import { createContext, useContext, useState, useEffect, type ReactNode, useCallback } from 'react';
 import type { Expense, Budget, Currency, BorrowLend, Emi, Income, Goal, IncomeStatus, Profile } from '@/lib/types';
 import { useAuth } from './auth-context';
-import { db } from '@/lib/firebase';
+import { db, storage } from '@/lib/firebase';
 import { 
   collection, 
   onSnapshot, 
@@ -18,6 +18,7 @@ import {
   writeBatch,
   getDocs
 } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { CATEGORIES, MOCK_BUDGETS } from '@/lib/data';
 import { format, startOfMonth, isSameMonth, parseISO } from 'date-fns';
 
@@ -47,7 +48,7 @@ interface AppContextType {
   updateGoal: (id: string, updates: Partial<Goal>) => Promise<void>;
   deleteGoal: (id: string) => Promise<void>;
   updateIncomeStatus: (id: string, status: IncomeStatus) => Promise<void>;
-  updateProfile: (data: Omit<Profile, 'email'>) => Promise<void>;
+  updateProfile: (data: Partial<Omit<Profile, 'email'>>, newAvatar?: File | null) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -137,6 +138,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
             name: data.name,
             age: data.age,
             gender: data.gender,
+            avatarUrl: data.avatarUrl,
           })
         }
       });
@@ -204,10 +206,25 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   };
 
   // Profile Management
-  const updateProfile = async (data: Omit<Profile, 'email'>) => {
+  const updateProfile = async (data: Partial<Omit<Profile, 'email'>>, newAvatar?: File | null) => {
     if (!user) throw new Error("User not authenticated");
     const userDocRef = doc(db, 'users', user.uid);
-    await updateDoc(userDocRef, data);
+
+    let avatarUrl;
+    if (newAvatar) {
+        const storageRef = ref(storage, `profile-pictures/${user.uid}`);
+        await uploadBytes(storageRef, newAvatar);
+        avatarUrl = await getDownloadURL(storageRef);
+    }
+    
+    const dataToUpdate: any = { ...data };
+    if (avatarUrl) {
+        dataToUpdate.avatarUrl = avatarUrl;
+    }
+    
+    if (Object.keys(dataToUpdate).length > 0) {
+        await updateDoc(userDocRef, dataToUpdate);
+    }
   };
 
   // Income Management

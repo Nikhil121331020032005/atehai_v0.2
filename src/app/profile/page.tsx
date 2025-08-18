@@ -101,7 +101,7 @@ export default function ProfilePage() {
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-4">
                                 <Avatar className="h-20 w-20">
-                                    <AvatarImage src="https://placehold.co/100x100.png" alt={profile.name || 'User Avatar'} data-ai-hint="user avatar" />
+                                    <AvatarImage src={profile.avatarUrl} alt={profile.name || 'User Avatar'} />
                                     <AvatarFallback>
                                         {profile.name ? profile.name.charAt(0).toUpperCase() : user?.email?.charAt(0).toUpperCase()}
                                     </AvatarFallback>
