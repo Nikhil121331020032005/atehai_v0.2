@@ -27,7 +27,7 @@ export function RecentExpenses({ expenses }: RecentExpensesProps) {
             <div className="space-y-4">
               {recentExpenses.map(expense => (
                 <div key={expense.id} className="flex items-center gap-4">
-                  <div className="p-2 bg-muted rounded-full">
+                  <div className="p-3 bg-muted rounded-full">
                     <CategoryIcon name={expense.category} className="h-5 w-5 text-muted-foreground" />
                   </div>
                   <div className="flex-1 space-y-1">
