@@ -6,12 +6,12 @@ import { getStorage } from "firebase/storage";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: "verde-budget-n7692.firebaseapp.com",
-  projectId: "verde-budget-n7692",
-  storageBucket: "verde-budget-n7692.appspot.com",
-  messagingSenderId: "89197451904",
-  appId: "1:89197451904:web:3076cf25306e0dda26a465",
+  apiKey: "AIzaSyCAta5Re35WJkb2G54rgS29K6JZLPmWX1E",
+  authDomain: "atehai.firebaseapp.com",
+  projectId: "atehai",
+  storageBucket: "atehai.firebasestorage.app",
+  messagingSenderId: "1038752064250",
+  appId: "1:1038752064250:web:d8ad5ae63e318ff1e39f43",
   measurementId: ""
 };
 
