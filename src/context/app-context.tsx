@@ -1,3 +1,4 @@
+
 'use client';
 
 import { createContext, useContext, useState, useEffect, type ReactNode, useCallback } from 'react';
@@ -53,8 +54,6 @@ interface AppContextType {
   updateIncomeStatus: (id: string, status: IncomeStatus) => Promise<void>;
   updateProfile: (data: Partial<Omit<Profile, 'email'>>, newAvatar?: File | null) => Promise<void>;
   resetMonthlyData: () => Promise<void>;
-  upgradeToPremium: () => Promise<void>;
-  cancelPremium: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -118,7 +117,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
             age: data.age,
             gender: data.gender,
             avatarUrl: data.avatarUrl,
-            isPremium: data.isPremium || false,
+            isPremium: true, // Everyone is premium for now
             resetsThisMonth: data.resetsThisMonth || 0,
             subscriptionEndDate: data.subscriptionEndDate,
             stripeCustomerId: data.stripeCustomerId,
@@ -139,6 +138,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       clearState();
       setExpenses(MOCK_EXPENSES);
       setBudgets(MOCK_BUDGETS as any);
+      setProfile({ email: '', isPremium: true });
       setIsLoading(false);
     }
   }, [user, clearState]);
@@ -325,29 +325,6 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     await batch.commit();
   });
 
-  const upgradeToPremium = requireAuth(async () => {
-    // This function is now deprecated in favor of Stripe checkout flow.
-    // It can be used for manual overrides or testing.
-    const userDocRef = doc(db, 'users', user!.uid);
-    const subscriptionEndDate = format(addMonths(new Date(), 1), 'yyyy-MM-dd');
-    await updateDoc(userDocRef, { 
-      isPremium: true,
-      subscriptionEndDate: subscriptionEndDate
-    });
-    toast({
-        title: 'Congratulations!',
-        description: 'You are now a premium member.',
-    });
-  });
-  
-  const cancelPremium = requireAuth(async () => {
-    const userDocRef = doc(db, 'users', user!.uid);
-    await updateDoc(userDocRef, {
-      isPremium: false,
-      subscriptionEndDate: null,
-      stripeSubscriptionId: null, // Also clear stripe subscription id
-    });
-  });
 
   return (
     <AppContext.Provider value={{
@@ -378,8 +355,6 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       updateIncomeStatus,
       updateProfile,
       resetMonthlyData,
-      upgradeToPremium,
-      cancelPremium
     }}>
       {children}
     </AppContext.Provider>

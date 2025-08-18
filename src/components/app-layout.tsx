@@ -39,12 +39,6 @@ export default function AppLayout({ children, pageTitle }: { children: React.Rea
     }
   };
 
-  const adPlaceholder = !profile?.isPremium && (
-      <div className="bg-muted border-2 border-dashed flex items-center justify-center h-24 my-4 rounded-lg">
-          <p className="text-muted-foreground text-sm">Ad Placeholder</p>
-      </div>
-  );
-
   return (
     <SidebarProvider>
       <Sidebar>
@@ -101,16 +95,6 @@ export default function AppLayout({ children, pageTitle }: { children: React.Rea
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
-            {!profile?.isPremium && (
-                 <SidebarMenuItem>
-                    <SidebarMenuButton asChild isActive={pathname === '/subscription'}>
-                        <Link href="/subscription">
-                            <Gem className="text-primary"/>
-                            Go Premium
-                        </Link>
-                    </SidebarMenuButton>
-                </SidebarMenuItem>
-            )}
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter>
@@ -149,7 +133,6 @@ export default function AppLayout({ children, pageTitle }: { children: React.Rea
           </div>
         </header>
         <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
-          {adPlaceholder}
           {children}
           <AddExpenseDialog isOpen={isDialogOpen} onOpenChange={setIsDialogOpen} />
         </main>

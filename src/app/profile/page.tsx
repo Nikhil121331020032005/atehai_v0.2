@@ -38,7 +38,7 @@ import Link from "next/link";
 
 export default function ProfilePage() {
     const { user, logout } = useAuth();
-    const { profile, isLoading, resetMonthlyData, cancelPremium } = useAppContext();
+    const { profile, isLoading, resetMonthlyData } = useAppContext();
     const router = useRouter();
     const { toast } = useToast();
     const [archivedMonths, setArchivedMonths] = useState<string[]>([]);
@@ -78,15 +78,6 @@ export default function ProfilePage() {
             console.error(error);
         } finally {
             setIsResetting(false);
-        }
-    }
-
-    const handleCancelPremium = async () => {
-        try {
-            await cancelPremium();
-            toast({ title: 'Subscription Cancelled', description: 'Your premium membership has been deactivated.' });
-        } catch (error) {
-            toast({ variant: 'destructive', title: 'Cancellation Failed', description: 'Could not cancel your subscription. Please try again.' });
         }
     }
 
@@ -188,80 +179,28 @@ export default function ProfilePage() {
                     </CardContent>
                 </Card>
 
-                {profile.isPremium && (
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <Star className="h-5 w-5 text-yellow-500" />
-                                Premium Membership
-                            </CardTitle>
-                            <CardDescription>Thank you for being a premium member.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                           <div className="flex items-center justify-between text-sm border-b pb-2">
-                                <span className="text-muted-foreground">Status</span>
-                                <span className="font-medium text-primary">Active</span>
-                            </div>
-                             <div className="flex items-center justify-between text-sm pt-2">
-                                <span className="text-muted-foreground">Renews On</span>
-                                <span className="font-medium">{profile.subscriptionEndDate ? format(parseISO(profile.subscriptionEndDate), 'PPP') : 'N/A'}</span>
-                            </div>
-                            <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                    <Button variant="destructive" className="w-full mt-2">Cancel Subscription</Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                        This will cancel your premium subscription. You will lose access to premium features at the end of your billing period.
-                                    </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                    <AlertDialogCancel>Keep Subscription</AlertDialogCancel>
-                                    <AlertDialogAction onClick={handleCancelPremium} className="bg-destructive hover:bg-destructive/90">
-                                        Yes, Cancel
-                                    </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
-                        </CardContent>
-                    </Card>
-                )}
-
                  <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                            <FileClock className="h-5 w-5" /> Archived Reports
                         </CardTitle>
-                        <CardDescription>Access your past monthly expense records. This is a premium feature.</CardDescription>
+                        <CardDescription>Access your past monthly expense records.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        {profile.isPremium ? (
-                            <Accordion type="single" collapsible className="w-full">
-                                {archivedMonths.length > 0 ? (
-                                    archivedMonths.map(month => (
-                                        <AccordionItem key={month} value={month}>
-                                            <AccordionTrigger>{format(new Date(month + '-02'), 'MMMM yyyy')}</AccordionTrigger>
-                                            <AccordionContent>
-                                                Here you will be able to see a summary or download the report for {format(new Date(month + '-02'), 'MMMM yyyy')}.
-                                            </AccordionContent>
-                                        </AccordionItem>
-                                    ))
-                                ) : (
-                                    <p className="text-sm text-muted-foreground text-center py-4">No archived reports found.</p>
-                                )}
-                            </Accordion>
-                        ) : (
-                            <div className="flex flex-col items-center justify-center text-center p-8 border-2 border-dashed rounded-lg">
-                                <Lock className="h-12 w-12 text-muted-foreground mb-4" />
-                                <h3 className="text-lg font-semibold">This Feature is Locked</h3>
-                                <p className="text-muted-foreground text-sm mb-4">Upgrade to premium to access your monthly archives.</p>
-                                <Button asChild>
-                                    <Link href="/subscription">Upgrade Now</Link>
-                                </Button>
-                            </div>
-                        )}
+                        <Accordion type="single" collapsible className="w-full">
+                            {archivedMonths.length > 0 ? (
+                                archivedMonths.map(month => (
+                                    <AccordionItem key={month} value={month}>
+                                        <AccordionTrigger>{format(new Date(month + '-02'), 'MMMM yyyy')}</AccordionTrigger>
+                                        <AccordionContent>
+                                            Here you will be able to see a summary or download the report for {format(new Date(month + '-02'), 'MMMM yyyy')}.
+                                        </AccordionContent>
+                                    </AccordionItem>
+                                ))
+                            ) : (
+                                <p className="text-sm text-muted-foreground text-center py-4">No archived reports found.</p>
+                            )}
+                        </Accordion>
                     </CardContent>
                 </Card>
 
