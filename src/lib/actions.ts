@@ -1,3 +1,4 @@
+
 'use server';
 
 import { suggestCategory } from '@/ai/flows/suggest-category';
@@ -10,6 +11,8 @@ import { doc, getDoc } from 'firebase/firestore';
 
 const validCategories = new Set(CATEGORIES.map(c => c.name));
 
+// The Cashfree configuration is kept here for when you're ready to go live.
+// Make sure to fill in your credentials in the .env file at that time.
 Cashfree.XClientId = process.env.CASHFREE_APP_ID!;
 Cashfree.XClientSecret = process.env.CASHFREE_SECRET_KEY!;
 Cashfree.XEnvironment = Cashfree.Environment.SANDBOX; // Use .PRODUCTION for live

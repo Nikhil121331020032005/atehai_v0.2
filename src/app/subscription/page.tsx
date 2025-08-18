@@ -1,13 +1,13 @@
+
 'use client';
 
 import AppLayout from "@/components/app-layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Check, Gem, Lock, RotateCcw, Moon } from "lucide-react";
-import { useState, useEffect } from "react";
-import { createCheckoutSession } from "@/lib/actions";
+import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import Head from "next/head";
+import { useAppContext } from "@/context/app-context";
 
 const premiumFeatures = [
     {
@@ -30,55 +30,22 @@ const premiumFeatures = [
 
 export default function SubscriptionPage() {
     const [isLoading, setIsLoading] = useState(false);
-    const [isCashfreeReady, setIsCashfreeReady] = useState(false);
     const { toast } = useToast();
-
-    useEffect(() => {
-        const script = document.createElement('script');
-        script.src = 'https://sdk.cashfree.com/js/v3/cashfree-checkout.js';
-        script.onload = () => setIsCashfreeReady(true);
-        script.onerror = () => {
-            toast({
-                variant: 'destructive',
-                title: 'Error',
-                description: 'Could not load payment gateway. Please refresh the page.',
-            });
-        };
-        document.body.appendChild(script);
-
-        return () => {
-            document.body.removeChild(script);
-        };
-    }, [toast]);
+    const { upgradeToPremium } = useAppContext();
 
     const handleUpgrade = async () => {
-        if (!isCashfreeReady) {
-             toast({
-                variant: 'destructive',
-                title: 'Payment Gateway Not Ready',
-                description: 'Please wait a moment for the payment gateway to load.',
-            });
-            return;
-        }
-
         setIsLoading(true);
         try {
-            const { session_id, error } = await createCheckoutSession();
-
-            if (error || !session_id) {
-                throw new Error(error || "Failed to create checkout session.");
-            }
-
-            const cashfree = new (window as any).Cashfree(session_id);
-            cashfree.checkout({
-                paymentStyle: "popup",
+            await upgradeToPremium();
+            toast({
+                title: 'Upgrade Successful!',
+                description: 'You now have access to all premium features.',
             });
-
         } catch (error: any) {
             toast({
                 variant: 'destructive',
-                title: 'Subscription Error',
-                description: error.message || 'Could not initiate payment. Please try again.',
+                title: 'Upgrade Error',
+                description: error.message || 'Could not complete the upgrade. Please try again.',
             });
         } finally {
             setIsLoading(false);
@@ -118,12 +85,12 @@ export default function SubscriptionPage() {
                          <Button 
                             className="w-full text-lg py-6" 
                             onClick={handleUpgrade}
-                            disabled={isLoading || !isCashfreeReady}
+                            disabled={isLoading}
                         >
-                            {isLoading ? "Redirecting..." : "Upgrade to Premium"}
+                            {isLoading ? "Activating..." : "Upgrade to Premium"}
                         </Button>
                         <p className="text-xs text-muted-foreground text-center mt-4">
-                            You will be redirected to our secure payment partner, Cashfree.
+                            For a limited time, upgrade for free.
                         </p>
                     </CardContent>
                 </Card>
