@@ -49,6 +49,7 @@ interface AppContextType {
   deleteGoal: (id: string) => Promise<void>;
   updateIncomeStatus: (id: string, status: IncomeStatus) => Promise<void>;
   updateProfile: (data: Partial<Omit<Profile, 'email'>>, newAvatar?: File | null) => Promise<void>;
+  resetMonthlyData: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -185,7 +186,6 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     const batch = writeBatch(db);
     const budgetsColRef = collection(db, 'users', user.uid, 'budgets');
     
-    // Get all existing budget documents for the user
     const existingBudgetsSnapshot = await getDocs(budgetsColRef);
     const existingBudgetsMap = new Map(existingBudgetsSnapshot.docs.map(d => [d.data().category, d.id]));
 
@@ -307,6 +307,27 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const updateGoal = async (id: string, updates: Partial<Goal>) => updateDocForUser('goals', id, updates);
   const deleteGoal = async (id: string) => deleteDocForUser('goals', id);
 
+  const resetMonthlyData = async () => {
+    if (!user) throw new Error("User not authenticated");
+
+    const batch = writeBatch(db);
+    const collectionsToDelete = ['expenses', 'income', 'borrowLend'];
+
+    for (const collectionName of collectionsToDelete) {
+      const colRef = collection(db, 'users', user.uid, collectionName);
+      const snapshot = await getDocs(colRef);
+      snapshot.docs.forEach(doc => batch.delete(doc.ref));
+    }
+
+    // Reset current amount in goals
+    const goalsColRef = collection(db, 'users', user.uid, 'goals');
+    const goalsSnapshot = await getDocs(goalsColRef);
+    goalsSnapshot.docs.forEach(doc => {
+        batch.update(doc.ref, { currentAmount: 0 });
+    });
+
+    await batch.commit();
+  };
 
   return (
     <AppContext.Provider value={{
@@ -336,6 +357,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       deleteGoal,
       updateIncomeStatus,
       updateProfile,
+      resetMonthlyData,
     }}>
       {children}
     </AppContext.Provider>

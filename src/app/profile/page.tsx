@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useAuth } from "@/context/auth-context";
 import { useAppContext } from "@/context/app-context";
 import { useToast } from "@/hooks/use-toast";
-import { LogOut, FileClock, Edit } from "lucide-react";
+import { LogOut, FileClock, Edit, RotateCcw } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -16,6 +16,17 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useEffect, useState } from "react";
@@ -26,11 +37,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function ProfilePage() {
     const { user, logout } = useAuth();
-    const { profile, isLoading } = useAppContext();
+    const { profile, isLoading, resetMonthlyData } = useAppContext();
     const router = useRouter();
     const { toast } = useToast();
     const [archivedMonths, setArchivedMonths] = useState<string[]>([]);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+    const [isResetting, setIsResetting] = useState(false);
 
     useEffect(() => {
         if (user) {
@@ -50,6 +62,19 @@ export default function ProfilePage() {
           toast({ title: 'Logged Out', description: 'You have been successfully logged out.' });
         } catch (error) {
           toast({ variant: 'destructive', title: 'Logout Failed', description: 'Could not log you out. Please try again.' });
+        }
+    }
+    
+    const handleReset = async () => {
+        setIsResetting(true);
+        try {
+            await resetMonthlyData();
+            toast({ title: 'Data Reset', description: 'Your current month\'s data has been successfully reset.' });
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Reset Failed', description: 'Could not reset your data. Please try again.' });
+            console.error(error);
+        } finally {
+            setIsResetting(false);
         }
     }
 
@@ -161,6 +186,40 @@ export default function ProfilePage() {
                                 <p className="text-sm text-muted-foreground text-center py-4">No archived reports found.</p>
                             )}
                         </Accordion>
+                    </CardContent>
+                </Card>
+
+                 <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-destructive">
+                           <RotateCcw className="h-5 w-5" /> Reset Monthly Data
+                        </CardTitle>
+                        <CardDescription>
+                            This will clear all your transactional data for the current month, including expenses, income, and borrow/lend records. Your goals will be reset, but your budgets and EMIs will not be deleted. This action cannot be undone.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="destructive" disabled={isResetting}>
+                                    {isResetting ? 'Resetting...' : 'Reset Current Month'}
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    This action cannot be undone. This will permanently delete all of your financial records for the current month and reset your goal progress.
+                                </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleReset} className="bg-destructive hover:bg-destructive/90">
+                                    Yes, reset my data
+                                </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
                     </CardContent>
                 </Card>
             </div>
