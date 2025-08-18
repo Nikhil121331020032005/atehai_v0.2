@@ -3,9 +3,11 @@
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import { onAuthStateChanged, type User, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import { useRouter, usePathname } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
+import { doc, setDoc, getDoc, writeBatch, collection } from 'firebase/firestore';
+import { MOCK_BUDGETS } from '@/lib/data';
 
 interface AuthContextType {
   user: User | null;
@@ -19,6 +21,34 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const publicRoutes = ['/login', '/signup'];
 
+const createInitialUserData = async (user: User) => {
+    const userDocRef = doc(db, 'users', user.uid);
+    const userDoc = await getDoc(userDocRef);
+
+    if (!userDoc.exists()) {
+        const batch = writeBatch(db);
+        
+        // Set up the main user document with default profile info
+        batch.set(userDocRef, {
+            email: user.email,
+            createdAt: new Date().toISOString(),
+            currency: 'USD',
+        });
+
+        // Set up default budgets in the 'budgets' subcollection
+        const budgetsColRef = collection(userDocRef, 'budgets');
+        MOCK_BUDGETS.forEach(budget => {
+            const newBudgetRef = doc(budgetsColRef);
+            batch.set(newBudgetRef, budget);
+        });
+        
+        // Add other initial collections if needed (e.g., empty expenses)
+        // For now, we'll let them be created on first use.
+
+        await batch.commit();
+    }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -28,6 +58,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
+      if (user) {
+        createInitialUserData(user);
+      }
       setIsLoading(false);
     });
 
@@ -51,8 +84,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return signInWithEmailAndPassword(auth, email, password);
   }
 
-  const signup = (email: string, password: string) => {
-    return createUserWithEmailAndPassword(auth, email, password);
+  const signup = async (email: string, password: string) => {
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    if(userCredential.user) {
+      await createInitialUserData(userCredential.user);
+    }
+    return userCredential;
   }
 
   const logout = () => {

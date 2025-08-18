@@ -1,10 +1,25 @@
 
 'use client';
 
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, type ReactNode, useCallback } from 'react';
 import type { Expense, Budget, Currency, BorrowLend, Emi, Income, Goal, IncomeStatus } from '@/lib/types';
-import { MOCK_EXPENSES, MOCK_BUDGETS, MOCK_BORROW_LEND, MOCK_EMIS, MOCK_INCOME, MOCK_GOALS } from '@/lib/data';
 import { useAuth } from './auth-context';
+import { db } from '@/lib/firebase';
+import { 
+  collection, 
+  onSnapshot, 
+  doc, 
+  addDoc, 
+  setDoc, 
+  deleteDoc, 
+  updateDoc,
+  query,
+  where,
+  writeBatch,
+  getDocs
+} from 'firebase/firestore';
+import { CATEGORIES, MOCK_BUDGETS } from '@/lib/data';
+import { format, startOfMonth, isSameMonth, parseISO } from 'date-fns';
 
 interface AppContextType {
   expenses: Expense[];
@@ -14,23 +29,23 @@ interface AppContextType {
   income: Income[];
   goals: Goal[];
   currency: Currency;
-  addExpense: (expense: Omit<Expense, 'id'>) => void;
-  updateBudgets: (newBudgets: Budget[]) => void;
-  setCurrency: (currency: Currency) => void;
+  addExpense: (expense: Omit<Expense, 'id'>) => Promise<void>;
+  updateBudgets: (newBudgets: Budget[]) => Promise<void>;
+  setCurrency: (currency: Currency) => Promise<void>;
   isLoading: boolean;
-  addBorrowLend: (item: Omit<BorrowLend, 'id' | 'status' | 'date'>) => void;
-  updateBorrowLendStatus: (id: string, status: 'Paid' | 'Pending') => void;
-  deleteBorrowLend: (id: string) => void;
-  addEmi: (item: Omit<Emi, 'id'>) => void;
-  updateEmi: (id: string, updates: Partial<Emi>) => void;
-  deleteEmi: (id: string) => void;
-  payEmi: (emi: Emi) => void;
-  addIncome: (item: Omit<Income, 'id'>) => void;
-  deleteIncome: (id: string) => void;
-  addGoal: (goal: Omit<Goal, 'id'>) => void;
-  updateGoal: (id: string, updates: Partial<Goal>) => void;
-  deleteGoal: (id: string) => void;
-  updateIncomeStatus: (id: string, status: IncomeStatus) => void;
+  addBorrowLend: (item: Omit<BorrowLend, 'id' | 'status' | 'date'>) => Promise<void>;
+  updateBorrowLendStatus: (id: string, status: 'Paid' | 'Pending') => Promise<void>;
+  deleteBorrowLend: (id: string) => Promise<void>;
+  addEmi: (item: Omit<Emi, 'id'>) => Promise<void>;
+  updateEmi: (id: string, updates: Partial<Emi>) => Promise<void>;
+  deleteEmi: (id: string) => Promise<void>;
+  payEmi: (emi: Emi) => Promise<void>;
+  addIncome: (item: Omit<Income, 'id'>) => Promise<void>;
+  deleteIncome: (id: string) => Promise<void>;
+  addGoal: (goal: Omit<Goal, 'id'>) => Promise<void>;
+  updateGoal: (id: string, updates: Partial<Goal>) => Promise<void>;
+  deleteGoal: (id: string) => Promise<void>;
+  updateIncomeStatus: (id: string, status: IncomeStatus) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -45,19 +60,84 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const [goals, setGoals] = useState<Goal[]>([]);
   const [currency, setCurrency] = useState<Currency>('USD');
   const [isLoading, setIsLoading] = useState(true);
+  const [lastCheckedMonth, setLastCheckedMonth] = useState<string | null>(null);
+
+  const archiveOldExpenses = useCallback(async (userId: string) => {
+    const now = new Date();
+    const currentMonthKey = format(now, 'yyyy-MM');
+
+    // Prevent re-running archive for the same month
+    if (lastCheckedMonth === currentMonthKey) return; 
+
+    const userDocRef = doc(db, 'users', userId);
+    const expensesColRef = collection(userDocRef, 'expenses');
+    const q = query(expensesColRef);
+    const querySnapshot = await getDocs(q);
+
+    const batch = writeBatch(db);
+    let hasOldExpenses = false;
+
+    querySnapshot.forEach(doc => {
+      const expense = doc.data() as Expense;
+      const expenseDate = parseISO(expense.date);
+      if (!isSameMonth(now, expenseDate)) {
+        hasOldExpenses = true;
+        const archiveMonthKey = format(expenseDate, 'yyyy-MM');
+        const archiveDocRef = doc(userDocRef, 'monthlyArchives', archiveMonthKey, 'expenses', doc.id);
+        batch.set(archiveDocRef, expense);
+        batch.delete(doc.ref);
+      }
+    });
+
+    if (hasOldExpenses) {
+      await batch.commit();
+      console.log('Old expenses have been archived.');
+    }
+    
+    // Update the last checked month
+    const profileRef = doc(db, 'users', userId);
+    await setDoc(profileRef, { lastCheckedMonth: currentMonthKey }, { merge: true });
+    setLastCheckedMonth(currentMonthKey);
+
+  }, [lastCheckedMonth]);
+
 
   // Load data when user is authenticated
   useEffect(() => {
     if (user) {
-      // In a real app, you would fetch this data from a database like Firestore
-      // For now, we'll continue using mock data when a user logs in.
-      setExpenses(MOCK_EXPENSES);
-      setBudgets(MOCK_BUDGETS);
-      setBorrowLend(MOCK_BORROW_LEND);
-      setEmis(MOCK_EMIS);
-      setIncome(MOCK_INCOME);
-      setGoals(MOCK_GOALS);
-      setIsLoading(false);
+      setIsLoading(true);
+      const dataCollections = ['expenses', 'budgets', 'borrowLend', 'emis', 'income', 'goals'];
+      const setters:any = {
+        expenses: setExpenses,
+        budgets: setBudgets,
+        borrowLend: setBorrowLend,
+        emis: setEmis,
+        income: setIncome,
+        goals: setGoals,
+      };
+
+      const unsubscribes = dataCollections.map(col => {
+        const colRef = collection(db, 'users', user.uid, col);
+        return onSnapshot(colRef, snapshot => {
+          const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any[];
+          setters[col](data);
+        });
+      });
+
+      const userProfileUnsubscribe = onSnapshot(doc(db, 'users', user.uid), (doc) => {
+        const data = doc.data();
+        if (data) {
+          setCurrency(data.currency || 'USD');
+          setLastCheckedMonth(data.lastCheckedMonth || null);
+        }
+      });
+      
+      archiveOldExpenses(user.uid).finally(() => setIsLoading(false));
+      
+      return () => {
+        unsubscribes.forEach(unsub => unsub());
+        userProfileUnsubscribe();
+      };
     } else {
       // Clear data when user logs out
       setExpenses([]);
@@ -66,46 +146,69 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       setEmis([]);
       setIncome([]);
       setGoals([]);
+      setCurrency('USD');
       setIsLoading(true);
     }
-  }, [user]);
+  }, [user, archiveOldExpenses]);
 
-  const addExpense = (expense: Omit<Expense, 'id'>) => {
-    const newExpense = { ...expense, id: new Date().toISOString() };
-    setExpenses(prev => [newExpense, ...prev]);
+  const addDocForUser = async (collectionName: string, data: object) => {
+    if (!user) throw new Error("User not authenticated");
+    await addDoc(collection(db, 'users', user.uid, collectionName), data);
   };
-
-  const updateBudgets = (newBudgets: Budget[]) => setBudgets(newBudgets);
-  const handleSetCurrency = (c: Currency) => setCurrency(c);
-
-  // Income Management
-  const addIncome = (item: Omit<Income, 'id'>) => {
-    const newIncome = {
-        ...item,
-        id: new Date().toISOString(),
-    };
-    setIncome(prev => [newIncome, ...prev]);
+  
+  const deleteDocForUser = async (collectionName: string, docId: string) => {
+    if (!user) throw new Error("User not authenticated");
+    await deleteDoc(doc(db, 'users', user.uid, collectionName, docId));
   }
 
-  const deleteIncome = (id: string) => setIncome(prev => prev.filter(item => item.id !== id));
+  const updateDocForUser = async (collectionName: string, docId: string, data: object) => {
+    if (!user) throw new Error("User not authenticated");
+    await updateDoc(doc(db, 'users', user.uid, collectionName, docId), data);
+  }
+  
+  const addExpense = async (expense: Omit<Expense, 'id'>) => addDocForUser('expenses', expense);
 
-  const updateIncomeStatus = (id: string, status: IncomeStatus) => {
-    setIncome(prev => prev.map(i => i.id === id ? { ...i, status } : i));
+  const updateBudgets = async (newBudgets: Budget[]) => {
+    if (!user) throw new Error("User not authenticated");
+    const batch = writeBatch(db);
+    const budgetsColRef = collection(db, 'users', user.uid, 'budgets');
+    
+    // First, delete all existing budget documents for the user
+    const existingBudgetsSnapshot = await getDocs(budgetsColRef);
+    existingBudgetsSnapshot.forEach(doc => batch.delete(doc.ref));
+    
+    // Now, add the new budget documents
+    newBudgets.forEach(budget => {
+        const newDocRef = doc(budgetsColRef);
+        batch.set(newDocRef, budget);
+    });
+
+    await batch.commit();
+  };
+  
+  const handleSetCurrency = async (c: Currency) => {
+    if (!user) throw new Error("User not authenticated");
+    const userDocRef = doc(db, 'users', user.uid);
+    await updateDoc(userDocRef, { currency: c });
+    setCurrency(c);
   };
 
+  // Income Management
+  const addIncome = async (item: Omit<Income, 'id'>) => addDocForUser('income', item);
+  const deleteIncome = async (id: string) => deleteDocForUser('income', id);
+  const updateIncomeStatus = async (id: string, status: IncomeStatus) => updateDocForUser('income', id, { status });
 
   // Borrow & Lend Management
-  const addBorrowLend = (item: Omit<BorrowLend, 'id' | 'status' | 'date'>) => {
-    const newItem: BorrowLend = {
+  const addBorrowLend = async (item: Omit<BorrowLend, 'id' | 'status' | 'date'>) => {
+    const newItem: Omit<BorrowLend, 'id'> = {
       ...item,
-      id: new Date().toISOString(),
       status: 'Pending',
       date: new Date().toISOString().split('T')[0],
     };
-    setBorrowLend(prev => [newItem, ...prev]);
+    await addDocForUser('borrowLend', newItem);
 
     if (item.type === 'lend') {
-        addExpense({
+        await addExpense({
             description: `Lent to ${item.person}`,
             amount: item.amount,
             date: new Date().toISOString().split('T')[0],
@@ -114,54 +217,46 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const updateBorrowLendStatus = (id: string, status: 'Paid' | 'Pending') => {
+  const updateBorrowLendStatus = async (id: string, status: 'Paid' | 'Pending') => {
     const item = borrowLend.find(i => i.id === id);
     if (!item || item.status === status) return;
-
-    setBorrowLend(prev => prev.map(i => i.id === id ? { ...i, status } : i));
+    await updateDocForUser('borrowLend', id, { status });
 
     if (status === 'Paid') {
-      if (item.type === 'borrow') {
-        addExpense({
-          description: `Repayment to ${item.person}`,
-          amount: item.amount,
-          date: new Date().toISOString().split('T')[0],
-          category: 'Lending',
-        });
-      } else { // type === 'lend'
-        addExpense({
-          description: `Repayment from ${item.person}`,
-          amount: -item.amount,
-          date: new Date().toISOString().split('T')[0],
-          category: 'Lending'
-        });
-        addIncome({
-          source: 'Other',
-          bank: `Repayment from ${item.person}`,
-          amount: item.amount,
-          date: new Date().toISOString().split('T')[0],
-          status: 'Received'
-        });
+        if (item.type === 'borrow') {
+          await addExpense({
+            description: `Repayment to ${item.person}`,
+            amount: item.amount,
+            date: new Date().toISOString().split('T')[0],
+            category: 'Lending',
+          });
+        } else { // type === 'lend'
+          await addExpense({
+            description: `Repayment from ${item.person}`,
+            amount: -item.amount,
+            date: new Date().toISOString().split('T')[0],
+            category: 'Lending'
+          });
+          await addIncome({
+            source: 'Other',
+            bank: `Repayment from ${item.person}`,
+            amount: item.amount,
+            date: new Date().toISOString().split('T')[0],
+            status: 'Received'
+          });
+        }
       }
-    }
   };
 
-  const deleteBorrowLend = (id: string) => setBorrowLend(prev => prev.filter(item => item.id !== id));
+  const deleteBorrowLend = async (id: string) => deleteDocForUser('borrowLend', id);
 
   // EMI Management
-  const addEmi = (item: Omit<Emi, 'id'>) => {
-    const newEmi = { ...item, id: new Date().toISOString() };
-    setEmis(prev => [newEmi, ...prev]);
-  };
-
-  const updateEmi = (id: string, updates: Partial<Emi>) => {
-    setEmis(prev => prev.map(emi => emi.id === id ? { ...emi, ...updates } : emi));
-  };
-  
-  const payEmi = (emi: Emi) => {
+  const addEmi = async (item: Omit<Emi, 'id'>) => addDocForUser('emis', item);
+  const updateEmi = async (id: string, updates: Partial<Emi>) => updateDocForUser('emis', id, updates);
+  const payEmi = async (emi: Emi) => {
     if (emi.tenure > 0) {
-      updateEmi(emi.id, { tenure: emi.tenure - 1 });
-      addExpense({
+      await updateEmi(emi.id, { tenure: emi.tenure - 1 });
+      await addExpense({
         description: `EMI for ${emi.name}`,
         amount: emi.amount,
         date: new Date().toISOString().split('T')[0],
@@ -169,19 +264,12 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       });
     }
   };
-
-  const deleteEmi = (id: string) => setEmis(prev => prev.filter(item => item.id !== id));
-  
+  const deleteEmi = async (id: string) => deleteDocForUser('emis', id);
 
   // Goal Management
-  const addGoal = (goal: Omit<Goal, 'id'>) => {
-    const newGoal = { ...goal, id: new Date().toISOString() };
-    setGoals(prev => [newGoal, ...prev]);
-  };
-  const updateGoal = (id: string, updates: Partial<Goal>) => {
-    setGoals(prev => prev.map(g => g.id === id ? { ...g, ...updates } : g));
-  };
-  const deleteGoal = (id: string) => setGoals(prev => prev.filter(g => g.id !== id));
+  const addGoal = async (goal: Omit<Goal, 'id'>) => addDocForUser('goals', goal);
+  const updateGoal = async (id: string, updates: Partial<Goal>) => updateDocForUser('goals', id, updates);
+  const deleteGoal = async (id: string) => deleteDocForUser('goals', id);
 
 
   return (

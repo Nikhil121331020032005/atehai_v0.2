@@ -17,6 +17,12 @@ import {
   HandCoins,
   Receipt,
   Target,
+  Briefcase,
+  PenTool,
+  School,
+  Activity,
+  Landmark,
+  PiggyBank
 } from 'lucide-react';
 import { subDays, format, addMonths } from 'date-fns';
 
