@@ -69,7 +69,7 @@ export default function SubscriptionPage() {
                             </ul>
                         </div>
                         <p className="text-center text-4xl font-bold mb-2">
-                           $9.99 <span className="text-lg font-normal text-muted-foreground">/ month</span>
+                           $2.99 <span className="text-lg font-normal text-muted-foreground">/ month</span>
                         </p>
                          <Button 
                             className="w-full text-lg py-6" 
