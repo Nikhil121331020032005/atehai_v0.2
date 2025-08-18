@@ -90,6 +90,16 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const updateBudgets = (newBudgets: Budget[]) => setBudgets(newBudgets);
   const handleSetCurrency = (c: Currency) => setCurrency(c);
 
+  // Income Management
+  const addIncome = (item: Omit<Income, 'id' | 'date'>) => {
+    const newIncome = {
+        ...item,
+        id: new Date().toISOString(),
+        date: new Date().toISOString().split('T')[0]
+    };
+    setIncome(prev => [newIncome, ...prev]);
+  }
+
   // Borrow & Lend Management
   const addBorrowLend = (item: Omit<BorrowLend, 'id' | 'status' | 'date'>) => {
     const newItem: BorrowLend = {
@@ -107,15 +117,22 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
             date: new Date().toISOString().split('T')[0],
             category: 'Lending',
         });
+    } else { // type === 'borrow'
+        // Money borrowed is income initially
+        addIncome({
+          source: 'Other',
+          bank: `Borrowed from ${item.person}`,
+          amount: item.amount
+        });
     }
   };
 
   const updateBorrowLendStatus = (id: string, status: 'Paid' | 'Pending') => {
     const item = borrowLend.find(i => i.id === id);
     if (!item) return;
-  
+
     setBorrowLend(prev => prev.map(i => i.id === id ? { ...i, status } : i));
-  
+
     if (status === 'Paid') {
       if (item.type === 'borrow') {
         // This is a repayment of a loan we took, so it's an expense.
@@ -125,9 +142,14 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
           date: new Date().toISOString().split('T')[0],
           category: 'Lending',
         });
+      } else { // type === 'lend'
+        // Money returned from a loan we gave out is considered income.
+        addIncome({
+          source: 'Other',
+          bank: `Repayment from ${item.person}`,
+          amount: item.amount
+        });
       }
-      // Note: Money returned from a loan we gave out is considered income, not a negative expense.
-      // We can handle this in the income section if needed.
     }
   };
 
@@ -156,16 +178,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   };
 
   const deleteEmi = (id: string) => setEmis(prev => prev.filter(item => item.id !== id));
-
-  // Income Management
-  const addIncome = (item: Omit<Income, 'id' | 'date'>) => {
-    const newIncome = {
-        ...item,
-        id: new Date().toISOString(),
-        date: new Date().toISOString().split('T')[0]
-    };
-    setIncome(prev => [newIncome, ...prev]);
-  }
+  
   const deleteIncome = (id: string) => setIncome(prev => prev.filter(item => item.id !== id));
 
   // Goal Management
