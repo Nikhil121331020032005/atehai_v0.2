@@ -68,7 +68,7 @@ export function AddExpenseDialog({ isOpen, onOpenChange }: AddExpenseDialogProps
     resolver: zodResolver(expenseSchema),
     defaultValues: {
       description: '',
-      amount: undefined,
+      amount: '' as any,
       date: new Date(),
     },
   });
