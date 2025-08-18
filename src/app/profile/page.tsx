@@ -204,6 +204,12 @@ export default function ProfilePage() {
                     </CardContent>
                 </Card>
 
+                 <Card className="h-48 flex items-center justify-center bg-muted/50">
+                    <CardContent className="p-0 text-center text-sm text-muted-foreground">
+                        <p>Advertisement Placeholder</p>
+                    </CardContent>
+                </Card>
+
                  <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-destructive">
