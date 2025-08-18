@@ -122,12 +122,12 @@ export default function AppLayout({ children, pageTitle }: { children: React.Rea
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
-        <header className="flex items-center justify-between border-b p-4">
+        <header className="flex items-center justify-between border-b p-4 flex-wrap gap-4">
           <div className="flex items-center gap-2">
             <SidebarTrigger className="md:hidden" />
             <h1 className="text-2xl font-semibold tracking-tight">{pageTitle}</h1>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 flex-wrap justify-end">
              <CurrencySelector />
              <ThemeToggle />
             <Button className="hidden md:flex" onClick={() => setIsDialogOpen(true)}>
