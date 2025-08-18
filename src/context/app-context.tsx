@@ -236,6 +236,13 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
             date: new Date().toISOString().split('T')[0],
             status: 'Received'
           });
+          // Add a negative expense to offset the original lending amount
+          await addExpense({
+            description: `Repayment from ${item.person}`,
+            amount: -item.amount, // Negative amount
+            date: new Date().toISOString().split('T')[0],
+            category: 'Lending'
+          });
         }
       }
   };
