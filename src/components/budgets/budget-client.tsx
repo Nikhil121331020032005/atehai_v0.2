@@ -50,16 +50,17 @@ export function BudgetClient() {
   });
 
   useEffect(() => {
-    if (contextBudgets.length > 0) {
-      const allBudgets = budgetableCategories.map(cat => {
-        const existingBudget = contextBudgets.find(b => b.category === cat.name);
-        return {
-          category: cat.name,
-          amount: existingBudget?.amount ?? 0,
-        };
-      });
-      replace(allBudgets);
-    }
+    // This effect ensures the form is populated once the budgets are loaded from context.
+    // It maps over all budgetable categories, finds the corresponding budget from the context,
+    // and defaults to 0 if one doesn't exist.
+    const allBudgets = budgetableCategories.map(cat => {
+      const existingBudget = contextBudgets.find(b => b.category === cat.name);
+      return {
+        category: cat.name,
+        amount: existingBudget?.amount ?? 0,
+      };
+    });
+    replace(allBudgets);
   }, [contextBudgets, replace]);
 
   const onSubmit = (data: z.infer<typeof formSchema>) => {
@@ -70,7 +71,7 @@ export function BudgetClient() {
     });
   };
 
-  if (isLoading) {
+  if (isLoading && fields.length === 0) {
     return <BudgetSkeleton />;
   }
 
