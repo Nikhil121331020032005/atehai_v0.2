@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useForm } from 'react-hook-form';
@@ -58,9 +59,9 @@ export function AddEmiDialog({ isOpen, onOpenChange }: AddEmiDialogProps) {
     resolver: zodResolver(emiSchema),
     defaultValues: {
       name: '',
-      amount: undefined,
+      amount: '' as any,
       dueDate: '5th of every month',
-      tenure: undefined,
+      tenure: '' as any,
     },
   });
 
