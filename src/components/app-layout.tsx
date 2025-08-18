@@ -17,16 +17,18 @@ import {
   SidebarInset,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { Home, PlusCircle, Wallet, ArrowLeftRight, Landmark, CalendarClock, Target, User, Info } from 'lucide-react';
+import { Home, PlusCircle, Wallet, ArrowLeftRight, Landmark, CalendarClock, Target, User, Info, Gem } from 'lucide-react';
 import { Logo } from '@/components/logo';
 import { AddExpenseDialog } from '@/components/add-expense-dialog';
 import { CurrencySelector } from './currency-selector';
 import { useAuth } from '@/context/auth-context';
+import { useAppContext } from '@/context/app-context';
 
 export default function AppLayout({ children, pageTitle }: { children: React.ReactNode; pageTitle: string }) {
   const pathname = usePathname();
   const router = useRouter();
   const { user } = useAuth();
+  const { profile } = useAppContext();
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
 
   const handleProfileClick = (e: React.MouseEvent) => {
@@ -35,6 +37,12 @@ export default function AppLayout({ children, pageTitle }: { children: React.Rea
       router.push('/login');
     }
   };
+
+  const adPlaceholder = !profile?.isPremium && (
+      <div className="bg-muted border-2 border-dashed flex items-center justify-center h-24 my-4 rounded-lg">
+          <p className="text-muted-foreground text-sm">Ad Placeholder</p>
+      </div>
+  );
 
   return (
     <SidebarProvider>
@@ -92,6 +100,16 @@ export default function AppLayout({ children, pageTitle }: { children: React.Rea
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
+            {!profile?.isPremium && (
+                 <SidebarMenuItem>
+                    <SidebarMenuButton asChild isActive={pathname === '/subscription'}>
+                        <Link href="/subscription">
+                            <Gem className="text-primary"/>
+                            Go Premium
+                        </Link>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
+            )}
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter>
@@ -129,6 +147,7 @@ export default function AppLayout({ children, pageTitle }: { children: React.Rea
           </div>
         </header>
         <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
+          {adPlaceholder}
           {children}
           <AddExpenseDialog isOpen={isDialogOpen} onOpenChange={setIsDialogOpen} />
         </main>

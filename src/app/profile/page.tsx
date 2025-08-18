@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useAuth } from "@/context/auth-context";
 import { useAppContext } from "@/context/app-context";
 import { useToast } from "@/hooks/use-toast";
-import { LogOut, FileClock, Edit, RotateCcw, Info } from "lucide-react";
+import { LogOut, FileClock, Edit, RotateCcw, Info, Lock } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -71,8 +71,10 @@ export default function ProfilePage() {
         try {
             await resetMonthlyData();
             toast({ title: 'Data Reset', description: 'Your current month\'s data has been successfully reset.' });
-        } catch (error) {
-            toast({ variant: 'destructive', title: 'Reset Failed', description: 'Could not reset your data. Please try again.' });
+        } catch (error: any) {
+            if (error.message !== 'Reset limit reached') {
+                toast({ variant: 'destructive', title: 'Reset Failed', description: 'Could not reset your data. Please try again.' });
+            }
             console.error(error);
         } finally {
             setIsResetting(false);
@@ -118,6 +120,8 @@ export default function ProfilePage() {
             </AppLayout>
         )
     }
+
+    const canReset = profile.isPremium || (profile.resetsThisMonth ?? 0) < 2;
 
     return (
         <AppLayout pageTitle="Profile">
@@ -177,23 +181,34 @@ export default function ProfilePage() {
                         <CardTitle className="flex items-center gap-2">
                            <FileClock className="h-5 w-5" /> Archived Reports
                         </CardTitle>
-                        <CardDescription>Access your past monthly expense records.</CardDescription>
+                        <CardDescription>Access your past monthly expense records. This is a premium feature.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <Accordion type="single" collapsible className="w-full">
-                            {archivedMonths.length > 0 ? (
-                                archivedMonths.map(month => (
-                                    <AccordionItem key={month} value={month}>
-                                        <AccordionTrigger>{format(new Date(month + '-02'), 'MMMM yyyy')}</AccordionTrigger>
-                                        <AccordionContent>
-                                            Here you will be able to see a summary or download the report for {format(new Date(month + '-02'), 'MMMM yyyy')}.
-                                        </AccordionContent>
-                                    </AccordionItem>
-                                ))
-                            ) : (
-                                <p className="text-sm text-muted-foreground text-center py-4">No archived reports found.</p>
-                            )}
-                        </Accordion>
+                        {profile.isPremium ? (
+                            <Accordion type="single" collapsible className="w-full">
+                                {archivedMonths.length > 0 ? (
+                                    archivedMonths.map(month => (
+                                        <AccordionItem key={month} value={month}>
+                                            <AccordionTrigger>{format(new Date(month + '-02'), 'MMMM yyyy')}</AccordionTrigger>
+                                            <AccordionContent>
+                                                Here you will be able to see a summary or download the report for {format(new Date(month + '-02'), 'MMMM yyyy')}.
+                                            </AccordionContent>
+                                        </AccordionItem>
+                                    ))
+                                ) : (
+                                    <p className="text-sm text-muted-foreground text-center py-4">No archived reports found.</p>
+                                )}
+                            </Accordion>
+                        ) : (
+                            <div className="flex flex-col items-center justify-center text-center p-8 border-2 border-dashed rounded-lg">
+                                <Lock className="h-12 w-12 text-muted-foreground mb-4" />
+                                <h3 className="text-lg font-semibold">This Feature is Locked</h3>
+                                <p className="text-muted-foreground text-sm mb-4">Upgrade to premium to access your monthly archives.</p>
+                                <Button asChild>
+                                    <Link href="/subscription">Upgrade Now</Link>
+                                </Button>
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
 
@@ -203,13 +218,13 @@ export default function ProfilePage() {
                            <RotateCcw className="h-5 w-5" /> Reset Monthly Data
                         </CardTitle>
                         <CardDescription>
-                            This will clear all your transactional data for the current month, including expenses, income, and borrow/lend records. Your goals will be reset, but your budgets and EMIs will not be deleted. This action cannot be undone.
+                            This will clear all your transactional data for the current month. Free users can do this twice a month. Premium users have unlimited resets. This action cannot be undone.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
                         <AlertDialog>
                             <AlertDialogTrigger asChild>
-                                <Button variant="destructive" disabled={isResetting}>
+                                <Button variant="destructive" disabled={isResetting || !canReset}>
                                     {isResetting ? 'Resetting...' : 'Reset Current Month'}
                                 </Button>
                             </AlertDialogTrigger>
@@ -228,6 +243,11 @@ export default function ProfilePage() {
                                 </AlertDialogFooter>
                             </AlertDialogContent>
                         </AlertDialog>
+                        {!profile.isPremium && (
+                            <p className="text-xs text-muted-foreground mt-2">
+                                You have {2 - (profile.resetsThisMonth ?? 0)} resets remaining this month.
+                            </p>
+                        )}
                     </CardContent>
                 </Card>
             </div>

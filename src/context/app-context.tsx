@@ -15,7 +15,9 @@ import {
   updateDoc,
   query,
   writeBatch,
-  getDocs
+  getDocs,
+  serverTimestamp,
+  increment
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { format, startOfMonth, isSameMonth, parseISO } from 'date-fns';
@@ -51,6 +53,7 @@ interface AppContextType {
   updateIncomeStatus: (id: string, status: IncomeStatus) => Promise<void>;
   updateProfile: (data: Partial<Omit<Profile, 'email'>>, newAvatar?: File | null) => Promise<void>;
   resetMonthlyData: () => Promise<void>;
+  upgradeToPremium: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -114,6 +117,8 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
             age: data.age,
             gender: data.gender,
             avatarUrl: data.avatarUrl,
+            isPremium: data.isPremium || false,
+            resetsThisMonth: data.resetsThisMonth || 0,
           })
         }
       });
@@ -281,6 +286,20 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const deleteGoal = requireAuth(async (id: string) => deleteDocForUser('goals', id));
 
   const resetMonthlyData = requireAuth(async () => {
+    if (!profile) return;
+    
+    // Premium users have unlimited resets
+    if (!profile.isPremium) {
+        if (profile.resetsThisMonth && profile.resetsThisMonth >= 2) {
+            toast({
+                variant: 'destructive',
+                title: 'Reset Limit Reached',
+                description: 'You have reached the monthly limit for data resets. Upgrade to premium for unlimited resets.',
+            });
+            return;
+        }
+    }
+
     const batch = writeBatch(db);
     const collectionsToDelete = ['expenses', 'income', 'borrowLend'];
 
@@ -296,7 +315,19 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
         batch.update(doc.ref, { currentAmount: 0 });
     });
 
+    const userDocRef = doc(db, 'users', user!.uid);
+    batch.update(userDocRef, { resetsThisMonth: increment(1) });
+
     await batch.commit();
+  });
+
+  const upgradeToPremium = requireAuth(async () => {
+    const userDocRef = doc(db, 'users', user!.uid);
+    await updateDoc(userDocRef, { isPremium: true });
+    toast({
+        title: 'Congratulations!',
+        description: 'You are now a premium member.',
+    });
   });
 
   return (
@@ -328,6 +359,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       updateIncomeStatus,
       updateProfile,
       resetMonthlyData,
+      upgradeToPremium,
     }}>
       {children}
     </AppContext.Provider>

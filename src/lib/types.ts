@@ -89,4 +89,6 @@ export type Profile = {
     gender?: 'Male' | 'Female' | 'Other' | 'Prefer not to say';
     email: string;
     avatarUrl?: string;
+    isPremium?: boolean;
+    resetsThisMonth?: number;
 };

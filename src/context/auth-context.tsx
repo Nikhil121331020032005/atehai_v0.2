@@ -20,7 +20,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const publicRoutes = ['/login', '/signup'];
+const publicRoutes = ['/login', '/signup', '/about', '/subscription'];
 
 const createInitialUserData = async (user: User) => {
     const userDocRef = doc(db, 'users', user.uid);
@@ -33,6 +33,8 @@ const createInitialUserData = async (user: User) => {
             email: user.email,
             createdAt: new Date().toISOString(),
             currency: 'USD',
+            isPremium: false,
+            resetsThisMonth: 0,
         });
 
         const budgetsColRef = collection(userDocRef, 'budgets');
@@ -70,7 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const isPublicRoute = publicRoutes.includes(pathname);
 
-    if (user && isPublicRoute) {
+    if (user && isPublicRoute && pathname !== '/about' && pathname !== '/subscription') {
       router.push('/');
     }
   }, [user, isLoading, pathname, router]);
