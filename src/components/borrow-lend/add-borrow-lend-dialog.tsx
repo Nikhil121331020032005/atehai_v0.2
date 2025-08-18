@@ -58,7 +58,7 @@ export function AddBorrowLendDialog({ isOpen, onOpenChange }: AddBorrowLendDialo
     defaultValues: {
       type: 'borrow',
       person: '',
-      amount: undefined,
+      amount: '' as any,
       dueDate: new Date(),
     },
   });
