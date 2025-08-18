@@ -23,6 +23,7 @@ import { AddExpenseDialog } from '@/components/add-expense-dialog';
 import { CurrencySelector } from './currency-selector';
 import { useAuth } from '@/context/auth-context';
 import { useAppContext } from '@/context/app-context';
+import { ThemeToggle } from './theme-toggle';
 
 export default function AppLayout({ children, pageTitle }: { children: React.ReactNode; pageTitle: string }) {
   const pathname = usePathname();
@@ -141,6 +142,7 @@ export default function AppLayout({ children, pageTitle }: { children: React.Rea
           </div>
           <div className="flex items-center gap-4">
              <CurrencySelector />
+             <ThemeToggle />
             <Button className="hidden md:flex" onClick={() => setIsDialogOpen(true)}>
               <PlusCircle className="mr-2" /> Add Expense
             </Button>

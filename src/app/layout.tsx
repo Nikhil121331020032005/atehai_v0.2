@@ -4,6 +4,7 @@ import { AppContextProvider } from "@/context/app-context";
 import { AuthProvider } from "@/context/auth-context";
 import { Toaster } from "@/components/ui/toaster";
 import "./globals.css";
+import { ThemeProvider } from "@/components/theme-provider";
 
 export const metadata: Metadata = {
   title: "Atehai",
@@ -23,12 +24,19 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased">
-        <AuthProvider>
-          <AppContextProvider>
-            {children}
-            <Toaster />
-          </AppContextProvider>
-        </AuthProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <AuthProvider>
+            <AppContextProvider>
+              {children}
+              <Toaster />
+            </AppContextProvider>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
