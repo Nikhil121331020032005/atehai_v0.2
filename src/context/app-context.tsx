@@ -134,7 +134,6 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
 
     if (status === 'Paid') {
       if (item.type === 'borrow') {
-        // This is a repayment of a loan we took, so it's an expense.
         addExpense({
           description: `Repayment to ${item.person}`,
           amount: item.amount,
@@ -142,12 +141,16 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
           category: 'Lending',
         });
       } else { // type === 'lend'
-        // Money returned from a loan we gave out is considered a negative expense.
         addExpense({
           description: `Repayment from ${item.person}`,
           amount: -item.amount,
           date: new Date().toISOString().split('T')[0],
           category: 'Lending'
+        });
+        addIncome({
+          source: 'Other',
+          bank: `Repayment from ${item.person}`,
+          amount: item.amount
         });
       }
     }
