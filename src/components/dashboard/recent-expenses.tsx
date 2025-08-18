@@ -5,12 +5,14 @@ import type { Expense } from '@/lib/types';
 import { formatCurrency } from '@/lib/utils';
 import { CategoryIcon } from '@/components/icons';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useAppContext } from '@/context/app-context';
 
 type RecentExpensesProps = {
   expenses: Expense[];
 };
 
 export function RecentExpenses({ expenses }: RecentExpensesProps) {
+  const { currency } = useAppContext();
   const recentExpenses = expenses.slice(0, 10);
 
   return (
@@ -32,7 +34,7 @@ export function RecentExpenses({ expenses }: RecentExpensesProps) {
                     <p className="text-sm font-medium leading-none truncate">{expense.description}</p>
                     <p className="text-xs text-muted-foreground">{expense.category}</p>
                   </div>
-                  <div className="font-medium text-right">{formatCurrency(expense.amount)}</div>
+                  <div className="font-medium text-right">{formatCurrency(expense.amount, currency)}</div>
                 </div>
               ))}
             </div>

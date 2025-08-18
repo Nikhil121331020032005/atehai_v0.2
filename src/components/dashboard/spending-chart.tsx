@@ -6,12 +6,17 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import type { Expense } from '@/lib/types';
 import { formatCurrency } from '@/lib/utils';
 import { CATEGORIES } from '@/lib/data';
+import { useAppContext } from '@/context/app-context';
+import { useRouter } from 'next/navigation';
 
 type SpendingChartProps = {
   expenses: Expense[];
 };
 
 export function SpendingChart({ expenses }: SpendingChartProps) {
+  const { currency } = useAppContext();
+  const router = useRouter();
+
   const data = useMemo(() => {
     const categorySpending = expenses.reduce((acc, expense) => {
       acc[expense.category] = (acc[expense.category] || 0) + expense.amount;
@@ -26,17 +31,24 @@ export function SpendingChart({ expenses }: SpendingChartProps) {
       }))
       .sort((a, b) => b.total - a.total);
   }, [expenses]);
+  
+  const handleBarClick = (data: any) => {
+    if (data && data.activePayload && data.activePayload.length > 0) {
+      const categoryName = data.activePayload[0].payload.name;
+      router.push(`/expenses/${categoryName}`);
+    }
+  };
 
   return (
     <Card className="h-full">
       <CardHeader>
         <CardTitle>Spending by Category</CardTitle>
-        <CardDescription>An overview of your expenses this month.</CardDescription>
+        <CardDescription>An overview of your expenses this month. Click a bar for details.</CardDescription>
       </CardHeader>
       <CardContent>
         {data.length > 0 ? (
           <ResponsiveContainer width="100%" height={350}>
-            <BarChart data={data} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+            <BarChart data={data} margin={{ top: 5, right: 20, left: -10, bottom: 5 }} onClick={handleBarClick}>
               <XAxis
                 dataKey="name"
                 stroke="#888888"
@@ -49,16 +61,16 @@ export function SpendingChart({ expenses }: SpendingChartProps) {
                 fontSize={12}
                 tickLine={false}
                 axisLine={false}
-                tickFormatter={(value) => `$${value}`}
+                tickFormatter={(value) => formatCurrency(value as number, currency).replace(/(\.00|,\d*)$/, '')}
               />
               <Tooltip
-                cursor={{ fill: 'hsl(var(--muted))' }}
+                cursor={{ fill: 'hsl(var(--muted))', cursor: 'pointer' }}
                 contentStyle={{
                   backgroundColor: 'hsl(var(--background))',
                   border: '1px solid hsl(var(--border))',
                   borderRadius: 'var(--radius)',
                 }}
-                formatter={(value: number) => [formatCurrency(value), 'Total Spent']}
+                formatter={(value: number) => [formatCurrency(value, currency), 'Total Spent']}
               />
               <Bar dataKey="total" radius={[4, 4, 0, 0]} />
             </BarChart>

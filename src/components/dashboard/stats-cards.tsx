@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DollarSign, Wallet, PiggyBank } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { Progress } from '@/components/ui/progress';
+import { useAppContext } from '@/context/app-context';
 
 type StatsCardsProps = {
   totalSpent: number;
@@ -12,6 +13,7 @@ type StatsCardsProps = {
 };
 
 export function StatsCards({ totalSpent, totalBudget, remainingBudget }: StatsCardsProps) {
+  const { currency } = useAppContext();
   const spentPercentage = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
 
   return (
@@ -22,7 +24,7 @@ export function StatsCards({ totalSpent, totalBudget, remainingBudget }: StatsCa
           <DollarSign className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{formatCurrency(totalSpent)}</div>
+          <div className="text-2xl font-bold">{formatCurrency(totalSpent, currency)}</div>
           <p className="text-xs text-muted-foreground">this month</p>
         </CardContent>
       </Card>
@@ -32,7 +34,7 @@ export function StatsCards({ totalSpent, totalBudget, remainingBudget }: StatsCa
           <Wallet className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{formatCurrency(totalBudget)}</div>
+          <div className="text-2xl font-bold">{formatCurrency(totalBudget, currency)}</div>
           <p className="text-xs text-muted-foreground">for this month</p>
         </CardContent>
       </Card>
@@ -42,7 +44,7 @@ export function StatsCards({ totalSpent, totalBudget, remainingBudget }: StatsCa
           <PiggyBank className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{formatCurrency(remainingBudget)}</div>
+          <div className="text-2xl font-bold">{formatCurrency(remainingBudget, currency)}</div>
           <Progress value={spentPercentage} className="mt-2 h-2" />
         </CardContent>
       </Card>

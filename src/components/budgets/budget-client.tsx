@@ -20,6 +20,7 @@ import { CategoryIcon } from '@/components/icons';
 import { useToast } from '@/hooks/use-toast';
 import { useEffect } from 'react';
 import { Skeleton } from '../ui/skeleton';
+import { formatCurrency } from '@/lib/utils';
 
 const budgetSchema = z.object({
   category: z.string(),
@@ -31,7 +32,7 @@ const formSchema = z.object({
 });
 
 export function BudgetClient() {
-  const { budgets: contextBudgets, updateBudgets, isLoading } = useAppContext();
+  const { budgets: contextBudgets, updateBudgets, isLoading, currency } = useAppContext();
   const { toast } = useToast();
   
   const form = useForm<z.infer<typeof formSchema>>({
@@ -68,6 +69,8 @@ export function BudgetClient() {
     return <BudgetSkeleton />;
   }
 
+  const currencySymbol = new Intl.NumberFormat('en-US', { style: 'currency', currency: currency }).formatToParts(1).find(part => part.type === 'currency')?.value || '$';
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -95,7 +98,7 @@ export function BudgetClient() {
                         <FormLabel className="sr-only">Budget for {categoryInfo.name}</FormLabel>
                         <FormControl>
                           <div className="relative">
-                            <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">$</span>
+                            <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">{currencySymbol}</span>
                             <Input
                               type="number"
                               className="pl-7"

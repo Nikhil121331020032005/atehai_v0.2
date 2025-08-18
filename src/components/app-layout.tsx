@@ -16,9 +16,10 @@ import {
   SidebarInset,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { Home, PlusCircle, Wallet } from 'lucide-react';
+import { Home, PlusCircle, Wallet, ArrowLeftRight, Landmark, CalendarClock, Globe, Settings } from 'lucide-react';
 import { Logo } from '@/components/logo';
 import { AddExpenseDialog } from '@/components/add-expense-dialog';
+import { CurrencySelector } from './currency-selector';
 
 export default function AppLayout({ children, pageTitle }: { children: React.ReactNode; pageTitle: string }) {
   const pathname = usePathname();
@@ -48,6 +49,30 @@ export default function AppLayout({ children, pageTitle }: { children: React.Rea
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild isActive={pathname === '/borrow-lend'}>
+                <Link href="/borrow-lend">
+                  <ArrowLeftRight />
+                  Borrow & Lend
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild isActive={pathname === '/emis'}>
+                <Link href="/emis">
+                  <CalendarClock />
+                  EMIs
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild isActive={pathname === '/income'}>
+                <Link href="/income">
+                  <Landmark />
+                  Income
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter>
@@ -62,8 +87,9 @@ export default function AppLayout({ children, pageTitle }: { children: React.Rea
             <SidebarTrigger className="md:hidden" />
             <h1 className="text-2xl font-semibold tracking-tight">{pageTitle}</h1>
           </div>
-          <div className="hidden md:block">
-            <Button onClick={() => setIsDialogOpen(true)}>
+          <div className="flex items-center gap-4">
+             <CurrencySelector />
+            <Button className="hidden md:flex" onClick={() => setIsDialogOpen(true)}>
               <PlusCircle className="mr-2" /> Add Expense
             </Button>
           </div>

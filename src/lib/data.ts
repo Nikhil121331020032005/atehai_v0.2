@@ -1,4 +1,4 @@
-import type { Category, Expense, Budget, CategoryName } from './types';
+import type { Category, Expense, Budget, CategoryName, BorrowLend, Emi, Income } from './types';
 import {
   ShoppingCart,
   Zap,
@@ -15,7 +15,7 @@ import {
   TrendingUp,
   MoreHorizontal,
 } from 'lucide-react';
-import { subDays, format } from 'date-fns';
+import { subDays, format, addMonths } from 'date-fns';
 
 export const CATEGORIES: Category[] = [
   { name: 'Groceries', icon: ShoppingCart, color: '#4ade80' },
@@ -51,3 +51,20 @@ export const MOCK_BUDGETS: Budget[] = CATEGORIES.map(category => {
   if (category.name === 'Utilities') amount = 150;
   return { category: category.name, amount };
 });
+
+export const MOCK_BORROW_LEND: BorrowLend[] = [
+  { id: 'bl1', type: 'borrow', person: 'John Doe', amount: 500, date: format(subDays(new Date(), 30), 'yyyy-MM-dd'), status: 'Pending', dueDate: format(addMonths(new Date(), 1), 'yyyy-MM-dd') },
+  { id: 'bl2', type: 'lend', person: 'Jane Smith', amount: 250, date: format(subDays(new Date(), 15), 'yyyy-MM-dd'), status: 'Pending', dueDate: format(addMonths(new Date(), 2), 'yyyy-MM-dd') },
+  { id: 'bl3', type: 'borrow', person: 'Local Bank', amount: 10000, date: format(subDays(new Date(), 90), 'yyyy-MM-dd'), status: 'Paid', dueDate: format(subDays(new Date(), 10), 'yyyy-MM-dd') },
+];
+
+export const MOCK_EMIS: Emi[] = [
+    { id: 'emi1', name: 'MacBook Pro', category: 'Gadget', amount: 250, dueDate: '5th of every month', tenure: 6 },
+    { id: 'emi2', name: 'Honda Civic', category: 'Car Loan', amount: 450, dueDate: '15th of every month', tenure: 24 },
+    { id: 'emi3', name: 'Apartment', category: 'Home Loan', amount: 1500, dueDate: '1st of every month', tenure: 180 },
+];
+
+export const MOCK_INCOME: Income[] = [
+    { id: 'inc1', source: 'Fixed Deposit', amount: 150, date: format(subDays(new Date(), 10), 'yyyy-MM-dd'), bank: 'Capital One' },
+    { id: 'inc2', source: 'Recurring Deposit', amount: 75, date: format(subDays(new Date(), 5), 'yyyy-MM-dd'), bank: 'Chase Bank' },
+];
