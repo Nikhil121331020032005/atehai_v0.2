@@ -4,7 +4,7 @@
 import AppLayout from "@/components/app-layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Check, Gem, Lock, RotateCcw } from "lucide-react";
+import { Check, Gem, Lock, RotateCcw, Moon } from "lucide-react";
 import { useAppContext } from "@/context/app-context";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -17,6 +17,10 @@ const premiumFeatures = [
     {
       icon: <RotateCcw className="h-5 w-5" />,
       text: "Unlimited monthly data resets",
+    },
+    {
+      icon: <Moon className="h-5 w-5" />,
+      text: "Switch to a beautiful dark mode",
     },
     {
       icon: <div className="text-sm">AD</div>,

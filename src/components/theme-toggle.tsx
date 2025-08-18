@@ -12,9 +12,33 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { useAppContext } from "@/context/app-context"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip"
 
 export function ThemeToggle() {
   const { setTheme } = useTheme()
+  const { profile } = useAppContext()
+
+  if (!profile?.isPremium) {
+    return (
+        <TooltipProvider>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    {/* The div wrapper is necessary for the tooltip to work on a disabled button */}
+                    <div>
+                        <Button variant="outline" size="icon" disabled>
+                            <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all" />
+                            <span className="sr-only">Toggle theme</span>
+                        </Button>
+                    </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                    <p>Upgrade to Premium to use Dark Mode.</p>
+                </TooltipContent>
+            </Tooltip>
+        </TooltipProvider>
+    )
+  }
 
   return (
     <DropdownMenu>
