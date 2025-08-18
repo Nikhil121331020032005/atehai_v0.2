@@ -143,15 +143,19 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     const batch = writeBatch(db);
     const budgetsColRef = collection(db, 'users', user.uid, 'budgets');
     
-    // Find existing budget documents to update them
     const existingBudgetsSnapshot = await getDocs(budgetsColRef);
     const existingBudgetsMap = new Map(existingBudgetsSnapshot.docs.map(d => [d.data().category, d.id]));
 
     newBudgets.forEach(budget => {
         const docId = existingBudgetsMap.get(budget.category);
         if (docId) {
+            // If budget exists, update it
             const docRef = doc(budgetsColRef, docId);
             batch.update(docRef, { amount: budget.amount });
+        } else {
+            // If budget doesn't exist, create it
+            const newDocRef = doc(budgetsColRef);
+            batch.set(newDocRef, { category: budget.category, amount: budget.amount });
         }
     });
 
