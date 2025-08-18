@@ -66,7 +66,7 @@ export function AddEmiDialog({ isOpen, onOpenChange }: AddEmiDialogProps) {
 
   const onSubmit = (values: z.infer<typeof emiSchema>) => {
     addEmi(values);
-    toast({ title: 'EMI Added', description: 'Your new EMI has been successfully tracked.' });
+    toast({ title: 'EMI Added', description: 'Your new EMI has been successfully tracked. Note: An expense is logged each time you mark an EMI as paid.' });
     form.reset();
     onOpenChange(false);
   };

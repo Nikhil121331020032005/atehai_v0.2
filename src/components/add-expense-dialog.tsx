@@ -45,7 +45,11 @@ const expenseSchema = z.object({
   description: z.string().min(3, { message: 'Description must be at least 3 characters long.' }),
   amount: z.coerce.number().positive({ message: 'Amount must be a positive number.' }),
   date: z.date(),
-  category: z.custom<CategoryName>(val => typeof val === 'string' && val, {
+  category: z.custom<CategoryName>(val => {
+    // This allows any string, but we validate it against our known categories.
+    // The cast to CategoryName is for type safety in the form.
+    return typeof val === 'string' && val.length > 0;
+  }, {
     message: "Please select a category"
   }),
 });

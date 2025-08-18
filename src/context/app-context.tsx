@@ -22,6 +22,7 @@ interface AppContextType {
   addEmi: (item: Omit<Emi, 'id'>) => void;
   updateEmi: (id: string, updates: Partial<Emi>) => void;
   deleteEmi: (id: string) => void;
+  payEmi: (emi: Emi) => void;
   addIncome: (item: Omit<Income, 'id' | 'date'>) => void;
   deleteIncome: (id: string) => void;
   addGoal: (goal: Omit<Goal, 'id'>) => void;
@@ -108,25 +109,52 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
         });
     }
   };
+
   const updateBorrowLendStatus = (id: string, status: 'Paid' | 'Pending') => {
-    setBorrowLend(prev => prev.map(item => item.id === id ? { ...item, status } : item));
+    const item = borrowLend.find(i => i.id === id);
+    if (!item) return;
+  
+    setBorrowLend(prev => prev.map(i => i.id === id ? { ...i, status } : i));
+  
+    if (status === 'Paid') {
+      if (item.type === 'borrow') {
+        // This is a repayment of a loan we took, so it's an expense.
+        addExpense({
+          description: `Repayment to ${item.person}`,
+          amount: item.amount,
+          date: new Date().toISOString().split('T')[0],
+          category: 'Lending',
+        });
+      }
+      // Note: Money returned from a loan we gave out is considered income, not a negative expense.
+      // We can handle this in the income section if needed.
+    }
   };
+
   const deleteBorrowLend = (id: string) => setBorrowLend(prev => prev.filter(item => item.id !== id));
 
   // EMI Management
   const addEmi = (item: Omit<Emi, 'id'>) => {
     const newEmi = { ...item, id: new Date().toISOString() };
     setEmis(prev => [newEmi, ...prev]);
-    addExpense({
-        description: `EMI for ${item.name}`,
-        amount: item.amount,
-        date: new Date().toISOString().split('T')[0],
-        category: 'EMI'
-    });
   };
+
   const updateEmi = (id: string, updates: Partial<Emi>) => {
     setEmis(prev => prev.map(emi => emi.id === id ? { ...emi, ...updates } : emi));
   };
+  
+  const payEmi = (emi: Emi) => {
+    if (emi.tenure > 0) {
+      updateEmi(emi.id, { tenure: emi.tenure - 1 });
+      addExpense({
+        description: `EMI for ${emi.name}`,
+        amount: emi.amount,
+        date: new Date().toISOString().split('T')[0],
+        category: 'EMI'
+      });
+    }
+  };
+
   const deleteEmi = (id: string) => setEmis(prev => prev.filter(item => item.id !== id));
 
   // Income Management
@@ -170,6 +198,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       addEmi,
       updateEmi,
       deleteEmi,
+      payEmi,
       addIncome,
       deleteIncome,
       addGoal,

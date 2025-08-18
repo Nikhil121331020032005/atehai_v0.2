@@ -22,16 +22,16 @@ import {
   } from "@/components/ui/alert-dialog"
 
 export function EmiClient() {
-  const { emis, isLoading, currency, updateEmi, deleteEmi } = useAppContext();
+  const { emis, isLoading, currency, payEmi, deleteEmi } = useAppContext();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
 
-  const handlePayEmi = (id: string, currentTenure: number) => {
-    if(currentTenure > 0) {
-      updateEmi(id, { tenure: currentTenure - 1 });
+  const handlePayEmi = (emi: any) => {
+    if(emi.tenure > 0) {
+      payEmi(emi);
       toast({
         title: 'EMI Paid!',
-        description: 'One month tenure has been reduced.',
+        description: 'An expense has been recorded and tenure reduced.',
       });
     } else {
         toast({
@@ -94,7 +94,7 @@ export function EmiClient() {
                         </p>
                     </CardContent>
                     <div className="p-6 pt-0">
-                        <Button className="w-full" onClick={() => handlePayEmi(emi.id, emi.tenure)} disabled={emi.tenure === 0}>
+                        <Button className="w-full" onClick={() => handlePayEmi(emi)} disabled={emi.tenure === 0}>
                            {emi.tenure > 0 ? 'Mark as Paid for this Month' : 'EMI Completed'}
                         </Button>
                     </div>
