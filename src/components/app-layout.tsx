@@ -99,13 +99,8 @@ export default function AppLayout({ children, pageTitle }: { children: React.Rea
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter>
-            <div className="p-2">
-                <Card className="bg-muted/50">
-                    <CardContent className="p-2 text-center text-xs text-muted-foreground">
-                        Ad Placeholder
-                    </CardContent>
-                </Card>
-            </div>
+            {/* AdSense Ad Unit Placeholder */}
+            <div className="w-full min-h-[250px]"></div>
             <SidebarMenu>
                 <SidebarMenuItem>
                     <SidebarMenuButton asChild isActive={pathname === '/about'}>
