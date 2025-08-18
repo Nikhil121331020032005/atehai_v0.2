@@ -35,7 +35,7 @@ import type { Profile } from '@/lib/types';
 import { useEffect } from 'react';
 
 const profileSchema = z.object({
-  name: z.string().min(2, { message: 'Name must be at least 2 characters.' }).optional(),
+  name: z.string().optional(),
   age: z.coerce.number().min(0, { message: 'Age cannot be negative.' }).optional(),
   gender: z.enum(['Male', 'Female', 'Other', 'Prefer not to say']).optional(),
 });
@@ -66,7 +66,12 @@ export function EditProfileDialog({ isOpen, onOpenChange, profile }: EditProfile
 
   const onSubmit = async (values: z.infer<typeof profileSchema>) => {
     try {
-        await updateProfile(values);
+        const dataToUpdate: Partial<Profile> = {};
+        if (values.name) dataToUpdate.name = values.name;
+        if (values.age) dataToUpdate.age = values.age;
+        if (values.gender) dataToUpdate.gender = values.gender;
+
+        await updateProfile(dataToUpdate);
         toast({ title: 'Profile Updated', description: 'Your profile information has been saved.' });
         onOpenChange(false);
     } catch (error) {
@@ -92,7 +97,7 @@ export function EditProfileDialog({ isOpen, onOpenChange, profile }: EditProfile
                 <FormItem>
                   <FormLabel>Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="Your Name" {...field} />
+                    <Input placeholder="Your Name" {...field} value={field.value ?? ''}/>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -106,7 +111,7 @@ export function EditProfileDialog({ isOpen, onOpenChange, profile }: EditProfile
                         <FormItem>
                         <FormLabel>Age</FormLabel>
                         <FormControl>
-                            <Input type="number" placeholder="Your Age" {...field} />
+                            <Input type="number" placeholder="Your Age" {...field} value={field.value ?? ''} />
                         </FormControl>
                         <FormMessage />
                         </FormItem>
