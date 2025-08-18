@@ -1,4 +1,4 @@
-import type { Category, Expense, Budget, CategoryName, BorrowLend, Emi, Income, EmiCategory, IncomeSource } from './types';
+import type { Category, Expense, Budget, CategoryName, BorrowLend, Emi, Income, EmiCategory, IncomeSource, Goal } from './types';
 import {
   ShoppingCart,
   Zap,
@@ -14,6 +14,9 @@ import {
   Smile,
   TrendingUp,
   MoreHorizontal,
+  HandCoins,
+  Receipt,
+  Target,
 } from 'lucide-react';
 import { subDays, format, addMonths } from 'date-fns';
 
@@ -31,6 +34,8 @@ export const CATEGORIES: Category[] = [
   { name: 'Insurance', icon: Shield, color: '#60a5fa' },
   { name: 'Personal Care', icon: Smile, color: '#e879f9' },
   { name: 'Investments', icon: TrendingUp, color: '#a3e635' },
+  { name: 'Lending', icon: HandCoins, color: '#f472b6' },
+  { name: 'EMI', icon: Receipt, color: '#6ee7b7' },
   { name: 'Other', icon: MoreHorizontal, color: '#9ca3af' },
 ];
 
@@ -49,6 +54,8 @@ export const MOCK_BUDGETS: Budget[] = CATEGORIES.map(category => {
   if (category.name === 'Rent') amount = 1200;
   if (category.name === 'Groceries') amount = 400;
   if (category.name === 'Utilities') amount = 150;
+  if (category.name === 'Lending') amount = 300;
+  if (category.name === 'EMI') amount = 800;
   return { category: category.name, amount };
 });
 
@@ -71,4 +78,10 @@ export const INCOME_SOURCES: IncomeSource[] = ['Fixed Deposit', 'Recurring Depos
 export const MOCK_INCOME: Income[] = [
     { id: 'inc1', source: 'Fixed Deposit', amount: 150, date: format(subDays(new Date(), 10), 'yyyy-MM-dd'), bank: 'Capital One' },
     { id: 'inc2', source: 'Recurring Deposit', amount: 75, date: format(subDays(new Date(), 5), 'yyyy-MM-dd'), bank: 'Chase Bank' },
+];
+
+export const MOCK_GOALS: Goal[] = [
+    { id: 'goal1', name: 'Vacation to Hawaii', targetAmount: 5000, currentAmount: 1200, deadline: format(addMonths(new Date(), 12), 'yyyy-MM-dd') },
+    { id: 'goal2', name: 'New Laptop', targetAmount: 2000, currentAmount: 1800, deadline: format(addMonths(new Date(), 2), 'yyyy-MM-dd') },
+    { id: 'goal3', name: 'Emergency Fund', targetAmount: 10000, currentAmount: 7500, deadline: format(addMonths(new Date(), 24), 'yyyy-MM-dd') },
 ];

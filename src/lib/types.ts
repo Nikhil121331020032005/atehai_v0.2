@@ -16,7 +16,9 @@ export type CategoryName =
   | 'Insurance' 
   | 'Personal Care' 
   | 'Investments' 
-  | 'Other';
+  | 'Other'
+  | 'Lending'
+  | 'EMI';
 
 export type Category = {
   name: CategoryName;
@@ -68,4 +70,12 @@ export type Income = {
   amount: number;
   date: string;
   bank: string;
+};
+
+export type Goal = {
+    id: string;
+    name: string;
+    targetAmount: number;
+    currentAmount: number;
+    deadline: string;
 };

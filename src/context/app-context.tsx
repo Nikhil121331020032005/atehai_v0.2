@@ -1,8 +1,8 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
-import type { Expense, Budget, Currency, BorrowLend, Emi, Income } from '@/lib/types';
-import { MOCK_EXPENSES, MOCK_BUDGETS, MOCK_BORROW_LEND, MOCK_EMIS, MOCK_INCOME } from '@/lib/data';
+import type { Expense, Budget, Currency, BorrowLend, Emi, Income, Goal } from '@/lib/types';
+import { MOCK_EXPENSES, MOCK_BUDGETS, MOCK_BORROW_LEND, MOCK_EMIS, MOCK_INCOME, MOCK_GOALS } from '@/lib/data';
 
 interface AppContextType {
   expenses: Expense[];
@@ -10,6 +10,7 @@ interface AppContextType {
   borrowLend: BorrowLend[];
   emis: Emi[];
   income: Income[];
+  goals: Goal[];
   currency: Currency;
   addExpense: (expense: Omit<Expense, 'id'>) => void;
   updateBudgets: (newBudgets: Budget[]) => void;
@@ -23,6 +24,9 @@ interface AppContextType {
   deleteEmi: (id: string) => void;
   addIncome: (item: Omit<Income, 'id' | 'date'>) => void;
   deleteIncome: (id: string) => void;
+  addGoal: (goal: Omit<Goal, 'id'>) => void;
+  updateGoal: (id: string, updates: Partial<Goal>) => void;
+  deleteGoal: (id: string) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -33,6 +37,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const [borrowLend, setBorrowLend] = useState<BorrowLend[]>([]);
   const [emis, setEmis] = useState<Emi[]>([]);
   const [income, setIncome] = useState<Income[]>([]);
+  const [goals, setGoals] = useState<Goal[]>([]);
   const [currency, setCurrency] = useState<Currency>('USD');
   const [isLoading, setIsLoading] = useState(true);
 
@@ -44,6 +49,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       const storedBorrowLend = localStorage.getItem('borrowLend');
       const storedEmis = localStorage.getItem('emis');
       const storedIncome = localStorage.getItem('income');
+      const storedGoals = localStorage.getItem('goals');
 
       setExpenses(storedExpenses ? JSON.parse(storedExpenses) : MOCK_EXPENSES);
       setBudgets(storedBudgets ? JSON.parse(storedBudgets) : MOCK_BUDGETS);
@@ -51,6 +57,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       setBorrowLend(storedBorrowLend ? JSON.parse(storedBorrowLend) : MOCK_BORROW_LEND);
       setEmis(storedEmis ? JSON.parse(storedEmis) : MOCK_EMIS);
       setIncome(storedIncome ? JSON.parse(storedIncome) : MOCK_INCOME);
+      setGoals(storedGoals ? JSON.parse(storedGoals) : MOCK_GOALS);
 
     } catch (error) {
       console.error("Failed to parse from localStorage", error);
@@ -60,6 +67,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       setBorrowLend(MOCK_BORROW_LEND);
       setEmis(MOCK_EMIS);
       setIncome(MOCK_INCOME);
+      setGoals(MOCK_GOALS);
     } finally {
       setIsLoading(false);
     }
@@ -71,6 +79,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   useEffect(() => { if (!isLoading) localStorage.setItem('borrowLend', JSON.stringify(borrowLend)); }, [borrowLend, isLoading]);
   useEffect(() => { if (!isLoading) localStorage.setItem('emis', JSON.stringify(emis)); }, [emis, isLoading]);
   useEffect(() => { if (!isLoading) localStorage.setItem('income', JSON.stringify(income)); }, [income, isLoading]);
+  useEffect(() => { if (!isLoading) localStorage.setItem('goals', JSON.stringify(goals)); }, [goals, isLoading]);
 
   const addExpense = (expense: Omit<Expense, 'id'>) => {
     const newExpense = { ...expense, id: new Date().toISOString() };
@@ -89,6 +98,15 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       date: new Date().toISOString().split('T')[0],
     };
     setBorrowLend(prev => [newItem, ...prev]);
+
+    if (item.type === 'lend') {
+        addExpense({
+            description: `Lent to ${item.person}`,
+            amount: item.amount,
+            date: new Date().toISOString().split('T')[0],
+            category: 'Lending',
+        });
+    }
   };
   const updateBorrowLendStatus = (id: string, status: 'Paid' | 'Pending') => {
     setBorrowLend(prev => prev.map(item => item.id === id ? { ...item, status } : item));
@@ -99,6 +117,12 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const addEmi = (item: Omit<Emi, 'id'>) => {
     const newEmi = { ...item, id: new Date().toISOString() };
     setEmis(prev => [newEmi, ...prev]);
+    addExpense({
+        description: `EMI for ${item.name}`,
+        amount: item.amount,
+        date: new Date().toISOString().split('T')[0],
+        category: 'EMI'
+    });
   };
   const updateEmi = (id: string, updates: Partial<Emi>) => {
     setEmis(prev => prev.map(emi => emi.id === id ? { ...emi, ...updates } : emi));
@@ -116,6 +140,16 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   }
   const deleteIncome = (id: string) => setIncome(prev => prev.filter(item => item.id !== id));
 
+  // Goal Management
+  const addGoal = (goal: Omit<Goal, 'id'>) => {
+    const newGoal = { ...goal, id: new Date().toISOString() };
+    setGoals(prev => [newGoal, ...prev]);
+  };
+  const updateGoal = (id: string, updates: Partial<Goal>) => {
+    setGoals(prev => prev.map(g => g.id === id ? { ...g, ...updates } : g));
+  };
+  const deleteGoal = (id: string) => setGoals(prev => prev.filter(g => g.id !== id));
+
 
   return (
     <AppContext.Provider value={{
@@ -124,6 +158,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       borrowLend,
       emis,
       income,
+      goals,
       currency,
       addExpense,
       updateBudgets,
@@ -137,6 +172,9 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       deleteEmi,
       addIncome,
       deleteIncome,
+      addGoal,
+      updateGoal,
+      deleteGoal,
     }}>
       {children}
     </AppContext.Provider>
