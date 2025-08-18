@@ -1,7 +1,8 @@
+
 'use client';
 
 import * as React from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   SidebarProvider,
@@ -16,14 +17,29 @@ import {
   SidebarInset,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { Home, PlusCircle, Wallet, ArrowLeftRight, Landmark, CalendarClock, Target, Globe } from 'lucide-react';
+import { Home, PlusCircle, Wallet, ArrowLeftRight, Landmark, CalendarClock, Target, Globe, LogOut } from 'lucide-react';
 import { Logo } from '@/components/logo';
 import { AddExpenseDialog } from '@/components/add-expense-dialog';
 import { CurrencySelector } from './currency-selector';
+import { useAuth } from '@/context/auth-context';
+import { useToast } from '@/hooks/use-toast';
 
 export default function AppLayout({ children, pageTitle }: { children: React.ReactNode; pageTitle: string }) {
   const pathname = usePathname();
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
+  const { logout } = useAuth();
+  const router = useRouter();
+  const { toast } = useToast();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      router.push('/login');
+      toast({ title: 'Logged Out', description: 'You have been successfully logged out.' });
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Logout Failed', description: 'Could not log you out. Please try again.' });
+    }
+  }
 
   return (
     <SidebarProvider>
@@ -84,9 +100,9 @@ export default function AppLayout({ children, pageTitle }: { children: React.Rea
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter>
-          <Button className="w-full" onClick={() => setIsDialogOpen(true)}>
-            <PlusCircle className="mr-2" /> New Expense
-          </Button>
+            <Button variant="ghost" onClick={handleLogout} className="w-full justify-start">
+              <LogOut className="mr-2" /> Logout
+            </Button>
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>

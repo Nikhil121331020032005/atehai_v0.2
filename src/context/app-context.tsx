@@ -1,8 +1,10 @@
+
 'use client';
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import type { Expense, Budget, Currency, BorrowLend, Emi, Income, Goal, IncomeStatus } from '@/lib/types';
 import { MOCK_EXPENSES, MOCK_BUDGETS, MOCK_BORROW_LEND, MOCK_EMIS, MOCK_INCOME, MOCK_GOALS } from '@/lib/data';
+import { useAuth } from './auth-context';
 
 interface AppContextType {
   expenses: Expense[];
@@ -34,14 +36,39 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppContextProvider({ children }: { children: ReactNode }) {
-  const [expenses, setExpenses] = useState<Expense[]>(MOCK_EXPENSES);
-  const [budgets, setBudgets] = useState<Budget[]>(MOCK_BUDGETS);
-  const [borrowLend, setBorrowLend] = useState<BorrowLend[]>(MOCK_BORROW_LEND);
-  const [emis, setEmis] = useState<Emi[]>(MOCK_EMIS);
-  const [income, setIncome] = useState<Income[]>(MOCK_INCOME);
-  const [goals, setGoals] = useState<Goal[]>(MOCK_GOALS);
+  const { user } = useAuth();
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [budgets, setBudgets] = useState<Budget[]>([]);
+  const [borrowLend, setBorrowLend] = useState<BorrowLend[]>([]);
+  const [emis, setEmis] = useState<Emi[]>([]);
+  const [income, setIncome] = useState<Income[]>([]);
+  const [goals, setGoals] = useState<Goal[]>([]);
   const [currency, setCurrency] = useState<Currency>('USD');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load data when user is authenticated
+  useEffect(() => {
+    if (user) {
+      // In a real app, you would fetch this data from a database like Firestore
+      // For now, we'll continue using mock data when a user logs in.
+      setExpenses(MOCK_EXPENSES);
+      setBudgets(MOCK_BUDGETS);
+      setBorrowLend(MOCK_BORROW_LEND);
+      setEmis(MOCK_EMIS);
+      setIncome(MOCK_INCOME);
+      setGoals(MOCK_GOALS);
+      setIsLoading(false);
+    } else {
+      // Clear data when user logs out
+      setExpenses([]);
+      setBudgets([]);
+      setBorrowLend([]);
+      setEmis([]);
+      setIncome([]);
+      setGoals([]);
+      setIsLoading(true);
+    }
+  }, [user]);
 
   const addExpense = (expense: Omit<Expense, 'id'>) => {
     const newExpense = { ...expense, id: new Date().toISOString() };
