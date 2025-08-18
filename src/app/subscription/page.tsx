@@ -4,11 +4,10 @@ import AppLayout from "@/components/app-layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Check, Gem, Lock, RotateCcw, Moon } from "lucide-react";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
 import { createCheckoutSession } from "@/lib/actions";
-import { getStripe } from "@/lib/stripe-client";
 import { useToast } from "@/hooks/use-toast";
+import Head from "next/head";
 
 const premiumFeatures = [
     {
@@ -31,35 +30,57 @@ const premiumFeatures = [
 
 export default function SubscriptionPage() {
     const [isLoading, setIsLoading] = useState(false);
-    const router = useRouter();
+    const [isCashfreeReady, setIsCashfreeReady] = useState(false);
     const { toast } = useToast();
 
+    useEffect(() => {
+        const script = document.createElement('script');
+        script.src = 'https://sdk.cashfree.com/js/v3/cashfree-checkout.js';
+        script.onload = () => setIsCashfreeReady(true);
+        script.onerror = () => {
+            toast({
+                variant: 'destructive',
+                title: 'Error',
+                description: 'Could not load payment gateway. Please refresh the page.',
+            });
+        };
+        document.body.appendChild(script);
+
+        return () => {
+            document.body.removeChild(script);
+        };
+    }, [toast]);
+
     const handleUpgrade = async () => {
+        if (!isCashfreeReady) {
+             toast({
+                variant: 'destructive',
+                title: 'Payment Gateway Not Ready',
+                description: 'Please wait a moment for the payment gateway to load.',
+            });
+            return;
+        }
+
         setIsLoading(true);
         try {
-            const { sessionId, error } = await createCheckoutSession();
+            const { session_id, error } = await createCheckoutSession();
 
-            if (error || !sessionId) {
+            if (error || !session_id) {
                 throw new Error(error || "Failed to create checkout session.");
             }
 
-            const stripe = await getStripe();
-            if (!stripe) {
-                throw new Error("Stripe.js failed to load.");
-            }
-            
-            const { error: stripeError } = await stripe.redirectToCheckout({ sessionId });
-            
-            if (stripeError) {
-                throw stripeError;
-            }
+            const cashfree = new (window as any).Cashfree(session_id);
+            cashfree.checkout({
+                paymentStyle: "popup",
+            });
 
         } catch (error: any) {
             toast({
                 variant: 'destructive',
                 title: 'Subscription Error',
-                description: error.message || 'Could not redirect to checkout. Please try again.',
-            })
+                description: error.message || 'Could not initiate payment. Please try again.',
+            });
+        } finally {
             setIsLoading(false);
         }
     }
@@ -92,17 +113,17 @@ export default function SubscriptionPage() {
                             </ul>
                         </div>
                         <p className="text-center text-4xl font-bold mb-2">
-                           $2.99 <span className="text-lg font-normal text-muted-foreground">/ month</span>
+                           ₹2.99 <span className="text-lg font-normal text-muted-foreground">/ month</span>
                         </p>
                          <Button 
                             className="w-full text-lg py-6" 
                             onClick={handleUpgrade}
-                            disabled={isLoading}
+                            disabled={isLoading || !isCashfreeReady}
                         >
-                            {isLoading ? "Redirecting to Checkout..." : "Upgrade to Premium"}
+                            {isLoading ? "Redirecting..." : "Upgrade to Premium"}
                         </Button>
                         <p className="text-xs text-muted-foreground text-center mt-4">
-                            You will be redirected to our secure payment partner, Stripe.
+                            You will be redirected to our secure payment partner, Cashfree.
                         </p>
                     </CardContent>
                 </Card>
