@@ -33,6 +33,8 @@ const formSchema = z.object({
   budgets: z.array(budgetSchema),
 });
 
+const budgetableCategories = CATEGORIES.filter(c => c.name !== 'Lending' && c.name !== 'EMI');
+
 export function BudgetClient() {
   const { budgets: contextBudgets, updateBudgets, isLoading, currency } = useAppContext();
   const { toast } = useToast();
@@ -50,8 +52,8 @@ export function BudgetClient() {
   });
 
   useEffect(() => {
-    if (!isLoading) {
-      const allBudgets = CATEGORIES.map(cat => {
+    if (!isLoading && contextBudgets.length > 0) {
+      const allBudgets = budgetableCategories.map(cat => {
         const existingBudget = contextBudgets.find(b => b.category === cat.name);
         return {
           category: cat.name,
@@ -134,7 +136,7 @@ function BudgetSkeleton() {
         <Skeleton className="h-10 w-32" />
       </div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {CATEGORIES.map((cat) => (
+        {budgetableCategories.map((cat) => (
           <Card key={cat.name}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <Skeleton className="h-5 w-24" />
