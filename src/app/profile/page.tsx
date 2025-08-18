@@ -186,19 +186,20 @@ export default function ProfilePage() {
                                 <Star className="h-5 w-5 text-yellow-500" />
                                 Premium Membership
                             </CardTitle>
-                            <CardDescription>Thank you for being a premium member. Here are your subscription details.</CardDescription>
+                            <CardDescription>Thank you for being a premium member.</CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-4">
-                           <div className="flex items-center justify-between border rounded-lg p-3">
-                                <span className="text-muted-foreground text-sm">Status</span>
+                        <CardContent className="space-y-2">
+                           <div className="flex items-center justify-between text-sm border-b pb-2">
+                                <span className="text-muted-foreground">Status</span>
                                 <span className="font-medium text-primary">Active</span>
                             </div>
-                             <div className="flex items-center justify-between border rounded-lg p-3">
-                                <span className="text-muted-foreground text-sm">Renews On</span>
+                             <div className="flex items-center justify-between text-sm">
+                                <span className="text-muted-foreground">Renews On</span>
                                 <span className="font-medium">{profile.subscriptionEndDate ? format(parseISO(profile.subscriptionEndDate), 'PPP') : 'N/A'}</span>
                             </div>
-                            <Button disabled>Manage Subscription</Button>
-                             <p className="text-xs text-muted-foreground">This is a placeholder. A real app would link to a payment provider's customer portal.</p>
+                            <p className="text-xs text-muted-foreground pt-2">
+                                Subscription management is handled by your payment provider.
+                            </p>
                         </CardContent>
                     </Card>
                 )}
@@ -286,3 +287,5 @@ export default function ProfilePage() {
         </AppLayout>
     )
 }
+
+    
