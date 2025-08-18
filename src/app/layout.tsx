@@ -6,7 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Verde Budget",
+  title: "Atehai",
   description: "A comprehensive budgeting and expense tracking app.",
 };
 

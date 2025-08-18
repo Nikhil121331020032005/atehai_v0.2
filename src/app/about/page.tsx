@@ -7,13 +7,13 @@ import { Button } from "@/components/ui/button";
 
 export default function AboutPage() {
   return (
-    <AppLayout pageTitle="About Verde Budget">
+    <AppLayout pageTitle="About Atehai">
       <div className="max-w-3xl mx-auto space-y-8 py-8 px-4">
         
         <div className="text-center space-y-4">
             <h1 className="text-4xl md:text-5xl font-bold text-primary tracking-tight">Our Mission</h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                We believe that financial literacy is the key to a better future. Verde Budget was born from a simple idea: to make managing money simple, intuitive, and accessible for everyone.
+                We believe that financial literacy is the key to a better future. Atehai was born from a simple idea: to make managing money simple, intuitive, and accessible for everyone.
             </p>
         </div>
 
@@ -27,7 +27,7 @@ export default function AboutPage() {
             </CardHeader>
             <CardContent>
                 <p className="text-center text-muted-foreground">
-                    Verde Budget is in its very early stages. As a new business, your feedback is the most valuable asset we have. Every suggestion, bug report, and idea helps us build a better product for you. We are committed to growing with our community and creating a tool that truly makes a difference in your financial life.
+                    Atehai is in its very early stages. As a new business, your feedback is the most valuable asset we have. Every suggestion, bug report, and idea helps us build a better product for you. We are committed to growing with our community and creating a tool that truly makes a difference in your financial life.
                 </p>
             </CardContent>
         </Card>
