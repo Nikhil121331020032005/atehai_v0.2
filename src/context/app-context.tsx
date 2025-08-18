@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
-import type { Expense, Budget, Currency, BorrowLend, Emi, Income, Goal } from '@/lib/types';
+import type { Expense, Budget, Currency, BorrowLend, Emi, Income, Goal, IncomeStatus } from '@/lib/types';
 import { MOCK_EXPENSES, MOCK_BUDGETS, MOCK_BORROW_LEND, MOCK_EMIS, MOCK_INCOME, MOCK_GOALS } from '@/lib/data';
 
 interface AppContextType {
@@ -23,11 +23,12 @@ interface AppContextType {
   updateEmi: (id: string, updates: Partial<Emi>) => void;
   deleteEmi: (id: string) => void;
   payEmi: (emi: Emi) => void;
-  addIncome: (item: Omit<Income, 'id' | 'date'>) => void;
+  addIncome: (item: Omit<Income, 'id'>) => void;
   deleteIncome: (id: string) => void;
   addGoal: (goal: Omit<Goal, 'id'>) => void;
   updateGoal: (id: string, updates: Partial<Goal>) => void;
   deleteGoal: (id: string) => void;
+  updateIncomeStatus: (id: string, status: IncomeStatus) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -91,14 +92,20 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const handleSetCurrency = (c: Currency) => setCurrency(c);
 
   // Income Management
-  const addIncome = (item: Omit<Income, 'id' | 'date'>) => {
+  const addIncome = (item: Omit<Income, 'id'>) => {
     const newIncome = {
         ...item,
         id: new Date().toISOString(),
-        date: new Date().toISOString().split('T')[0]
     };
     setIncome(prev => [newIncome, ...prev]);
   }
+
+  const deleteIncome = (id: string) => setIncome(prev => prev.filter(item => item.id !== id));
+
+  const updateIncomeStatus = (id: string, status: IncomeStatus) => {
+    setIncome(prev => prev.map(i => i.id === id ? { ...i, status } : i));
+  };
+
 
   // Borrow & Lend Management
   const addBorrowLend = (item: Omit<BorrowLend, 'id' | 'status' | 'date'>) => {
@@ -121,14 +128,16 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
         addIncome({
           source: 'Other',
           bank: `Borrowed from ${item.person}`,
-          amount: item.amount
+          amount: item.amount,
+          date: new Date().toISOString().split('T')[0],
+          status: 'Received',
         });
     }
   };
 
   const updateBorrowLendStatus = (id: string, status: 'Paid' | 'Pending') => {
     const item = borrowLend.find(i => i.id === id);
-    if (!item) return;
+    if (!item || item.status === status) return;
 
     setBorrowLend(prev => prev.map(i => i.id === id ? { ...i, status } : i));
 
@@ -143,14 +152,16 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       } else { // type === 'lend'
         addExpense({
           description: `Repayment from ${item.person}`,
-          amount: -item.amount,
+          amount: -item.amount, // Negative expense to offset the original loan
           date: new Date().toISOString().split('T')[0],
           category: 'Lending'
         });
         addIncome({
           source: 'Other',
           bank: `Repayment from ${item.person}`,
-          amount: item.amount
+          amount: item.amount,
+          date: new Date().toISOString().split('T')[0],
+          status: 'Received'
         });
       }
     }
@@ -182,7 +193,6 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
 
   const deleteEmi = (id: string) => setEmis(prev => prev.filter(item => item.id !== id));
   
-  const deleteIncome = (id: string) => setIncome(prev => prev.filter(item => item.id !== id));
 
   // Goal Management
   const addGoal = (goal: Omit<Goal, 'id'>) => {
@@ -220,6 +230,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       addGoal,
       updateGoal,
       deleteGoal,
+      updateIncomeStatus,
     }}>
       {children}
     </AppContext.Provider>

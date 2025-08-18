@@ -10,6 +10,8 @@ import { Skeleton } from '../ui/skeleton';
 import { Button } from '../ui/button';
 import { PlusCircle, Trash2 } from 'lucide-react';
 import { AddIncomeDialog } from './add-income-dialog';
+import { Badge } from '@/components/ui/badge';
+import type { IncomeStatus } from '@/lib/types';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -23,13 +25,18 @@ import {
   } from "@/components/ui/alert-dialog"
 
 export function IncomeClient() {
-  const { income, isLoading, currency, deleteIncome } = useAppContext();
+  const { income, isLoading, currency, deleteIncome, updateIncomeStatus } = useAppContext();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
   }, []);
+
+  const handleStatusChange = (id: string, currentStatus: IncomeStatus) => {
+    const newStatus = currentStatus === 'Pending' ? 'Received' : 'Pending';
+    updateIncomeStatus(id, newStatus);
+  };
 
   if (isLoading || !isClient) {
     return <PageSkeleton />;
@@ -47,15 +54,16 @@ export function IncomeClient() {
       <Card>
         <CardHeader>
           <CardTitle>Income History</CardTitle>
-          <CardDescription>A log of your earnings from bank schemes and other sources.</CardDescription>
+          <CardDescription>A log of your earnings from various sources.</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Source</TableHead>
-                <TableHead>Bank</TableHead>
+                <TableHead>Bank/Client</TableHead>
                 <TableHead>Date</TableHead>
+                <TableHead>Status</TableHead>
                 <TableHead className="text-right">Amount</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -67,6 +75,15 @@ export function IncomeClient() {
                     <TableCell className="font-medium">{item.source}</TableCell>
                     <TableCell>{item.bank}</TableCell>
                     <TableCell>{format(parseISO(item.date), 'PPP')}</TableCell>
+                    <TableCell>
+                      <Badge 
+                        variant={item.status === 'Received' ? 'secondary' : 'outline'}
+                        className="cursor-pointer"
+                        onClick={() => handleStatusChange(item.id, item.status)}
+                      >
+                        {item.status}
+                      </Badge>
+                    </TableCell>
                     <TableCell className="text-right">{formatCurrency(item.amount, currency)}</TableCell>
                     <TableCell className="text-right">
                         <AlertDialog>
@@ -93,7 +110,7 @@ export function IncomeClient() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center h-24">
+                  <TableCell colSpan={6} className="text-center h-24">
                     No income recorded yet.
                   </TableCell>
                 </TableRow>
@@ -123,9 +140,11 @@ function PageSkeleton() {
           <div className="space-y-2">
             {[...Array(5)].map((_, i) => (
                 <div key={i} className="flex justify-between items-center p-2">
-                    <Skeleton className="h-5 w-1/4" />
-                    <Skeleton className="h-5 w-1/4" />
-                    <Skeleton className="h-5 w-1/4" />
+                    <Skeleton className="h-5 w-1/6" />
+                    <Skeleton className="h-5 w-1/6" />
+                    <Skeleton className="h-5 w-1/6" />
+                    <Skeleton className="h-5 w-1/6" />
+                    <Skeleton className="h-5 w-1/6" />
                     <Skeleton className="h-5 w-1/6" />
                 </div>
             ))}

@@ -73,11 +73,12 @@ export const MOCK_EMIS: Emi[] = [
     { id: 'emi3', name: 'Apartment', category: 'Home Loan', amount: 1500, dueDate: '1st of every month', tenure: 180 },
 ];
 
-export const INCOME_SOURCES: IncomeSource[] = ['Fixed Deposit', 'Recurring Deposit', 'Other'];
+export const INCOME_SOURCES: IncomeSource[] = ['Salary', 'Freelance', 'Internship', 'Investments', 'Fixed Deposit', 'Recurring Deposit', 'Other'];
 
 export const MOCK_INCOME: Income[] = [
-    { id: 'inc1', source: 'Fixed Deposit', amount: 150, date: format(subDays(new Date(), 10), 'yyyy-MM-dd'), bank: 'Capital One' },
-    { id: 'inc2', source: 'Recurring Deposit', amount: 75, date: format(subDays(new Date(), 5), 'yyyy-MM-dd'), bank: 'Chase Bank' },
+    { id: 'inc1', source: 'Fixed Deposit', amount: 150, date: format(subDays(new Date(), 10), 'yyyy-MM-dd'), bank: 'Capital One', status: 'Received' },
+    { id: 'inc2', source: 'Recurring Deposit', amount: 75, date: format(subDays(new Date(), 5), 'yyyy-MM-dd'), bank: 'Chase Bank', status: 'Received' },
+    { id: 'inc3', source: 'Salary', amount: 5000, date: format(addMonths(new Date(), 1), 'yyyy-MM-dd'), bank: 'Bank of America', status: 'Pending' },
 ];
 
 export const MOCK_GOALS: Goal[] = [

@@ -62,7 +62,8 @@ export type Emi = {
   tenure: number; // in months
 };
 
-export type IncomeSource = 'Fixed Deposit' | 'Recurring Deposit' | 'Other';
+export type IncomeSource = 'Salary' | 'Freelance' | 'Internship' | 'Investments' |'Fixed Deposit' | 'Recurring Deposit' | 'Other';
+export type IncomeStatus = 'Pending' | 'Received';
 
 export type Income = {
   id: string;
@@ -70,6 +71,7 @@ export type Income = {
   amount: number;
   date: string;
   bank: string;
+  status: IncomeStatus;
 };
 
 export type Goal = {
