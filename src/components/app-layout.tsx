@@ -21,10 +21,20 @@ import { Home, PlusCircle, Wallet, ArrowLeftRight, Landmark, CalendarClock, Targ
 import { Logo } from '@/components/logo';
 import { AddExpenseDialog } from '@/components/add-expense-dialog';
 import { CurrencySelector } from './currency-selector';
+import { useAuth } from '@/context/auth-context';
 
 export default function AppLayout({ children, pageTitle }: { children: React.ReactNode; pageTitle: string }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user } = useAuth();
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
+
+  const handleProfileClick = (e: React.MouseEvent) => {
+    if (!user) {
+      e.preventDefault();
+      router.push('/login');
+    }
+  };
 
   return (
     <SidebarProvider>
@@ -88,7 +98,7 @@ export default function AppLayout({ children, pageTitle }: { children: React.Rea
             <SidebarMenu>
                 <SidebarMenuItem>
                     <SidebarMenuButton asChild isActive={pathname === '/profile'}>
-                        <Link href="/profile">
+                        <Link href="/profile" onClick={handleProfileClick}>
                             <User />
                             Profile
                         </Link>

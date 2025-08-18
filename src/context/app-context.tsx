@@ -70,7 +70,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const [currency, setCurrency] = useState<Currency>('USD');
   const [isLoading, setIsLoading] = useState(true);
   
-  const clearState = () => {
+  const clearState = useCallback(() => {
     setExpenses([]);
     setBudgets([]);
     setBorrowLend([]);
@@ -79,11 +79,13 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     setGoals([]);
     setProfile(null);
     setCurrency('USD');
-  };
+  }, []);
 
   useEffect(() => {
     if (user) {
       setIsLoading(true);
+      clearState(); // Clear any mock data from guest session
+
       const dataCollections = ['expenses', 'budgets', 'borrowLend', 'emis', 'income', 'goals'];
       const setters:any = {
         expenses: setExpenses,
@@ -130,7 +132,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       setBudgets(MOCK_BUDGETS as any);
       setIsLoading(false);
     }
-  }, [user]);
+  }, [user, clearState]);
 
   const requireAuth = (action: Function) => {
     return (...args: any[]) => {
@@ -170,13 +172,8 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
 
     newBudgets.forEach(budget => {
         const docId = existingBudgetsMap.get(budget.category);
-        if (docId) {
-            const docRef = doc(budgetsColRef, docId);
-            batch.update(docRef, { amount: budget.amount });
-        } else {
-            const newDocRef = doc(budgetsColRef);
-            batch.set(newDocRef, { category: budget.category, amount: budget.amount });
-        }
+        const docRef = docId ? doc(budgetsColRef, docId) : doc(budgetsColRef);
+        batch.set(docRef, { category: budget.category, amount: budget.amount }, { merge: true });
     });
 
     await batch.commit();
@@ -236,29 +233,30 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     await updateDocForUser('borrowLend', id, { status });
 
     if (status === 'Paid') {
-        if (item.type === 'borrow') {
-          await addExpense({
-            description: `Repayment to ${item.person}`,
-            amount: item.amount,
-            date: new Date().toISOString().split('T')[0],
-            category: 'Lending',
-          });
-        } else {
-          await addIncome({
-            source: 'Other',
-            bank: `Repayment from ${item.person}`,
-            amount: item.amount,
-            date: new Date().toISOString().split('T')[0],
-            status: 'Received'
-          });
-          await addExpense({
-            description: `Repayment from ${item.person}`,
+      if (item.type === 'borrow') {
+        await addExpense({
+          description: `Repayment to ${item.person}`,
+          amount: item.amount,
+          date: new Date().toISOString().split('T')[0],
+          category: 'Lending',
+        });
+      } else {
+        await addIncome({
+          source: 'Other',
+          bank: `Repayment from ${item.person}`,
+          amount: item.amount,
+          date: new Date().toISOString().split('T')[0],
+          status: 'Received'
+        });
+        // Add a negative expense to offset the original lending expense
+        await addExpense({
+            description: `Repayment received from ${item.person}`,
             amount: -item.amount,
             date: new Date().toISOString().split('T')[0],
             category: 'Lending'
-          });
-        }
+        });
       }
+    }
   });
 
   const deleteBorrowLend = requireAuth(async (id: string) => deleteDocForUser('borrowLend', id));
