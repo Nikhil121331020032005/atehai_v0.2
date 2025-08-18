@@ -17,7 +17,7 @@ import {
   SidebarInset,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { Home, PlusCircle, Wallet, ArrowLeftRight, Landmark, CalendarClock, Target, User } from 'lucide-react';
+import { Home, PlusCircle, Wallet, ArrowLeftRight, Landmark, CalendarClock, Target, User, Info } from 'lucide-react';
 import { Logo } from '@/components/logo';
 import { AddExpenseDialog } from '@/components/add-expense-dialog';
 import { CurrencySelector } from './currency-selector';
@@ -96,6 +96,14 @@ export default function AppLayout({ children, pageTitle }: { children: React.Rea
         </SidebarContent>
         <SidebarFooter>
             <SidebarMenu>
+                <SidebarMenuItem>
+                    <SidebarMenuButton asChild isActive={pathname === '/about'}>
+                        <Link href="/about">
+                            <Info />
+                            About
+                        </Link>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
                 <SidebarMenuItem>
                     <SidebarMenuButton asChild isActive={pathname === '/profile'}>
                         <Link href="/profile" onClick={handleProfileClick}>

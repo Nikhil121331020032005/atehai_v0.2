@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useAuth } from "@/context/auth-context";
 import { useAppContext } from "@/context/app-context";
 import { useToast } from "@/hooks/use-toast";
-import { LogOut, FileClock, Edit, RotateCcw } from "lucide-react";
+import { LogOut, FileClock, Edit, RotateCcw, Info } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -33,6 +33,7 @@ import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { EditProfileDialog } from "@/components/profile/edit-profile-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import Link from "next/link";
 
 
 export default function ProfilePage() {
@@ -158,9 +159,16 @@ export default function ProfilePage() {
                             </div>
                         </div>
 
-                        <Button onClick={handleLogout} variant="outline" className="w-full md:w-auto">
-                           <LogOut className="mr-2 h-4 w-4" /> Logout
-                        </Button>
+                        <div className="flex flex-wrap gap-2">
+                             <Button onClick={handleLogout} variant="outline">
+                                <LogOut className="mr-2 h-4 w-4" /> Logout
+                            </Button>
+                            <Button asChild variant="outline">
+                               <Link href="/about">
+                                <Info className="mr-2 h-4 w-4" /> About Us
+                               </Link>
+                            </Button>
+                        </div>
                     </CardContent>
                 </Card>
 
