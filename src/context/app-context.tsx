@@ -180,19 +180,21 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   
   const addExpense = async (expense: Omit<Expense, 'id'>) => addDocForUser('expenses', expense);
 
-  const updateBudgets = async (newBudgets: Budget[]) => {
+  const updateBudgets = async (newBudgets: Omit<Budget, 'id'>[]) => {
     if (!user) throw new Error("User not authenticated");
     const batch = writeBatch(db);
     const budgetsColRef = collection(db, 'users', user.uid, 'budgets');
     
-    // First, delete all existing budget documents for the user
+    // Get all existing budget documents for the user
     const existingBudgetsSnapshot = await getDocs(budgetsColRef);
-    existingBudgetsSnapshot.forEach(doc => batch.delete(doc.ref));
-    
-    // Now, add the new budget documents
+    const existingBudgetsMap = new Map(existingBudgetsSnapshot.docs.map(d => [d.data().category, d.id]));
+
     newBudgets.forEach(budget => {
-        const newDocRef = doc(budgetsColRef);
-        batch.set(newDocRef, budget);
+        const docId = existingBudgetsMap.get(budget.category);
+        if (docId) {
+            const docRef = doc(budgetsColRef, docId);
+            batch.update(docRef, { amount: budget.amount });
+        }
     });
 
     await batch.commit();

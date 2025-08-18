@@ -21,6 +21,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useEffect } from 'react';
 import { Skeleton } from '../ui/skeleton';
 import { formatCurrency } from '@/lib/utils';
+import { Budget } from '@/lib/types';
 
 const budgetSchema = z.object({
   category: z.string(),
@@ -39,13 +40,13 @@ export function BudgetClient() {
     resolver: zodResolver(formSchema),
   });
 
-  const { fields } = useFieldArray({
+  const { fields, replace } = useFieldArray({
     control: form.control,
     name: 'budgets',
   });
 
   useEffect(() => {
-    if (!isLoading) {
+    if (!isLoading && contextBudgets.length > 0) {
       const initialBudgets = CATEGORIES.map(cat => {
         const existingBudget = contextBudgets.find(b => b.category === cat.name);
         return {
@@ -53,9 +54,9 @@ export function BudgetClient() {
           amount: existingBudget?.amount ?? 0,
         };
       });
-      form.reset({ budgets: initialBudgets });
+      replace(initialBudgets);
     }
-  }, [isLoading, contextBudgets, form]);
+  }, [isLoading, contextBudgets, replace]);
 
   const onSubmit = (data: z.infer<typeof formSchema>) => {
     updateBudgets(data.budgets);

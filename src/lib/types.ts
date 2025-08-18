@@ -35,6 +35,7 @@ export type Expense = {
 };
 
 export type Budget = {
+  id: string;
   category: CategoryName;
   amount: number;
 };
