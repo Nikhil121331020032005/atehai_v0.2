@@ -24,6 +24,7 @@ import { CurrencySelector } from './currency-selector';
 import { useAuth } from '@/context/auth-context';
 import { useAppContext } from '@/context/app-context';
 import { ThemeToggle } from './theme-toggle';
+import { Card, CardContent } from './ui/card';
 
 export default function AppLayout({ children, pageTitle }: { children: React.ReactNode; pageTitle: string }) {
   const pathname = usePathname();
@@ -98,6 +99,13 @@ export default function AppLayout({ children, pageTitle }: { children: React.Rea
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter>
+            <div className="p-2">
+                <Card className="bg-muted/50">
+                    <CardContent className="p-2 text-center text-xs text-muted-foreground">
+                        Ad Placeholder
+                    </CardContent>
+                </Card>
+            </div>
             <SidebarMenu>
                 <SidebarMenuItem>
                     <SidebarMenuButton asChild isActive={pathname === '/about'}>

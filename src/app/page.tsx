@@ -2,19 +2,29 @@
 import AppLayout from "@/components/app-layout";
 import DashboardClient from "@/components/dashboard/dashboard-client";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Card, CardContent } from "@/components/ui/card";
 import { Gem } from "lucide-react";
 
 export default function DashboardPage() {
   return (
     <AppLayout pageTitle="Dashboard">
-      <Alert className="mb-6 border-primary/50 text-primary">
-          <Gem className="h-4 w-4" />
-          <AlertTitle className="font-semibold">Welcome, Early Adopter!</AlertTitle>
-          <AlertDescription>
-            As a thank you for joining us early, you have complimentary access to all premium features. Enjoy!
-          </AlertDescription>
-      </Alert>
-      <DashboardClient />
+      <div className="space-y-6">
+        <Alert className="border-primary/50 text-primary">
+            <Gem className="h-4 w-4" />
+            <AlertTitle className="font-semibold">Welcome, Early Adopter!</AlertTitle>
+            <AlertDescription>
+              As a thank you for joining us early, you have complimentary access to all premium features. Enjoy!
+            </AlertDescription>
+        </Alert>
+
+        <Card className="h-48 flex items-center justify-center bg-muted/50">
+          <CardContent className="p-0 text-center text-sm text-muted-foreground">
+              <p>Advertisement Placeholder</p>
+          </CardContent>
+        </Card>
+
+        <DashboardClient />
+      </div>
     </AppLayout>
   );
 }
