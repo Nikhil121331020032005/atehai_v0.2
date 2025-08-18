@@ -118,7 +118,6 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
             category: 'Lending',
         });
     } else { // type === 'borrow'
-        // Money borrowed is income initially
         addIncome({
           source: 'Other',
           bank: `Borrowed from ${item.person}`,
@@ -143,11 +142,12 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
           category: 'Lending',
         });
       } else { // type === 'lend'
-        // Money returned from a loan we gave out is considered income.
-        addIncome({
-          source: 'Other',
-          bank: `Repayment from ${item.person}`,
-          amount: item.amount
+        // Money returned from a loan we gave out is considered a negative expense.
+        addExpense({
+          description: `Repayment from ${item.person}`,
+          amount: -item.amount,
+          date: new Date().toISOString().split('T')[0],
+          category: 'Lending'
         });
       }
     }
