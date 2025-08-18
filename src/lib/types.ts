@@ -81,3 +81,10 @@ export type Goal = {
     currentAmount: number;
     deadline: string;
 };
+
+export type Profile = {
+    name?: string;
+    age?: number;
+    gender?: 'Male' | 'Female' | 'Other' | 'Prefer not to say';
+    email: string;
+};

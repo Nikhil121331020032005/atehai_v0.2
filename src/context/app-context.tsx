@@ -2,7 +2,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, type ReactNode, useCallback } from 'react';
-import type { Expense, Budget, Currency, BorrowLend, Emi, Income, Goal, IncomeStatus } from '@/lib/types';
+import type { Expense, Budget, Currency, BorrowLend, Emi, Income, Goal, IncomeStatus, Profile } from '@/lib/types';
 import { useAuth } from './auth-context';
 import { db } from '@/lib/firebase';
 import { 
@@ -28,6 +28,7 @@ interface AppContextType {
   emis: Emi[];
   income: Income[];
   goals: Goal[];
+  profile: Profile | null;
   currency: Currency;
   addExpense: (expense: Omit<Expense, 'id'>) => Promise<void>;
   updateBudgets: (newBudgets: Budget[]) => Promise<void>;
@@ -46,6 +47,7 @@ interface AppContextType {
   updateGoal: (id: string, updates: Partial<Goal>) => Promise<void>;
   deleteGoal: (id: string) => Promise<void>;
   updateIncomeStatus: (id: string, status: IncomeStatus) => Promise<void>;
+  updateProfile: (data: Omit<Profile, 'email'>) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -58,6 +60,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const [emis, setEmis] = useState<Emi[]>([]);
   const [income, setIncome] = useState<Income[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [currency, setCurrency] = useState<Currency>('USD');
   const [isLoading, setIsLoading] = useState(true);
   const [lastCheckedMonth, setLastCheckedMonth] = useState<string | null>(null);
@@ -129,6 +132,12 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
         if (data) {
           setCurrency(data.currency || 'USD');
           setLastCheckedMonth(data.lastCheckedMonth || null);
+          setProfile({
+            email: user.email || '',
+            name: data.name,
+            age: data.age,
+            gender: data.gender,
+          })
         }
       });
       
@@ -146,6 +155,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       setEmis([]);
       setIncome([]);
       setGoals([]);
+      setProfile(null);
       setCurrency('USD');
       setIsLoading(true);
     }
@@ -191,6 +201,13 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     const userDocRef = doc(db, 'users', user.uid);
     await updateDoc(userDocRef, { currency: c });
     setCurrency(c);
+  };
+
+  // Profile Management
+  const updateProfile = async (data: Omit<Profile, 'email'>) => {
+    if (!user) throw new Error("User not authenticated");
+    const userDocRef = doc(db, 'users', user.uid);
+    await updateDoc(userDocRef, data);
   };
 
   // Income Management
@@ -280,6 +297,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       emis,
       income,
       goals,
+      profile,
       currency,
       addExpense,
       updateBudgets,
@@ -298,6 +316,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       updateGoal,
       deleteGoal,
       updateIncomeStatus,
+      updateProfile,
     }}>
       {children}
     </AppContext.Provider>
