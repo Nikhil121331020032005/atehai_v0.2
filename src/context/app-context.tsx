@@ -1,7 +1,7 @@
 
 'use client';
 
-import { createContext, useContext, useState, useEffect, type ReactNode, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, type ReactNode, useCallback, useRef } from 'react';
 import type { Expense, Budget, Currency, BorrowLend, Emi, Income, Goal, IncomeStatus, Profile } from '@/lib/types';
 import { useAuth } from './auth-context';
 import { db, storage } from '@/lib/firebase';
@@ -73,6 +73,8 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const [currency, setCurrency] = useState<Currency>('USD');
   const [isLoading, setIsLoading] = useState(true);
   
+  const unsubscribes = useRef<(() => void)[]>([]);
+
   const clearState = useCallback(() => {
     setExpenses([]);
     setBudgets([]);
@@ -83,65 +85,79 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     setProfile(null);
     setCurrency('USD');
   }, []);
+  
+  const setupGuestData = () => {
+    clearState();
+    setExpenses(MOCK_EXPENSES);
+    setBudgets(MOCK_BUDGETS as any);
+    setProfile({ email: '', isPremium: true });
+    setIsLoading(false);
+  }
 
   useEffect(() => {
-    if (user) {
-      setIsLoading(true);
-      clearState(); // Clear any mock data from guest session
-
-      const dataCollections = ['expenses', 'budgets', 'borrowLend', 'emis', 'income', 'goals'];
-      const setters:any = {
-        expenses: setExpenses,
-        budgets: setBudgets,
-        borrowLend: setBorrowLend,
-        emis: setEmis,
-        income: setIncome,
-        goals: setGoals,
-      };
-
-      const unsubscribes = dataCollections.map(col => {
-        const colRef = collection(db, 'users', user.uid, col);
-        return onSnapshot(colRef, snapshot => {
-          const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any[];
-          setters[col](data);
-        });
-      });
-
-      const userProfileUnsubscribe = onSnapshot(doc(db, 'users', user.uid), (doc) => {
-        const data = doc.data();
-        if (data) {
-          setCurrency(data.currency || 'USD');
-          setProfile({
-            email: user.email || '',
-            name: data.name,
-            age: data.age,
-            gender: data.gender,
-            avatarUrl: data.avatarUrl,
-            isPremium: true, // Everyone is premium for now
-            resetsThisMonth: data.resetsThisMonth || 0,
-            subscriptionEndDate: data.subscriptionEndDate,
-            stripeCustomerId: data.stripeCustomerId,
-            stripeSubscriptionId: data.stripeSubscriptionId,
-          })
-        }
-      });
-      
-      setIsLoading(false);
-      
-      return () => {
-        unsubscribes.forEach(unsub => unsub());
-        userProfileUnsubscribe();
-        clearState();
-      };
-    } else {
-      // Use mock data for logged-out users
-      clearState();
-      setExpenses(MOCK_EXPENSES);
-      setBudgets(MOCK_BUDGETS as any);
-      setProfile({ email: '', isPremium: true });
-      setIsLoading(false);
+    // If user logs out, clear all subscriptions and reset state
+    if (!user) {
+      unsubscribes.current.forEach(unsub => unsub());
+      unsubscribes.current = [];
+      setupGuestData();
+      return;
     }
-  }, [user, clearState]);
+    
+    // If user is logged in but subscriptions are already active, do nothing.
+    if (unsubscribes.current.length > 0) {
+      setIsLoading(false);
+      return;
+    }
+
+    // User is logged in and we need to set up subscriptions.
+    setIsLoading(true);
+
+    const dataCollections = ['expenses', 'budgets', 'borrowLend', 'emis', 'income', 'goals'];
+    const setters:any = {
+      expenses: setExpenses,
+      budgets: setBudgets,
+      borrowLend: setBorrowLend,
+      emis: setEmis,
+      income: setIncome,
+      goals: setGoals,
+    };
+
+    const newUnsubscribes = dataCollections.map(col => {
+      const colRef = collection(db, 'users', user.uid, col);
+      return onSnapshot(colRef, snapshot => {
+        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any[];
+        setters[col](data);
+      });
+    });
+
+    const userProfileUnsubscribe = onSnapshot(doc(db, 'users', user.uid), (doc) => {
+      const data = doc.data();
+      if (data) {
+        setCurrency(data.currency || 'USD');
+        setProfile({
+          email: user.email || '',
+          name: data.name,
+          age: data.age,
+          gender: data.gender,
+          avatarUrl: data.avatarUrl,
+          isPremium: true, // Everyone is premium for now
+          resetsThisMonth: data.resetsThisMonth || 0,
+          subscriptionEndDate: data.subscriptionEndDate,
+          stripeCustomerId: data.stripeCustomerId,
+          stripeSubscriptionId: data.stripeSubscriptionId,
+        })
+      }
+      setIsLoading(false); // Set loading to false after profile is fetched
+    });
+    
+    newUnsubscribes.push(userProfileUnsubscribe);
+    unsubscribes.current = newUnsubscribes;
+
+    return () => {
+      unsubscribes.current.forEach(unsub => unsub());
+      unsubscribes.current = [];
+    };
+  }, [user]);
 
   const requireAuth = (action: Function) => {
     return (...args: any[]) => {

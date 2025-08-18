@@ -20,7 +20,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const publicRoutes = ['/login', '/signup', '/about', '/subscription'];
+const publicRoutes = ['/login', '/signup'];
 
 const createInitialUserData = async (user: User) => {
     const userDocRef = doc(db, 'users', user.uid);
@@ -56,8 +56,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        await createInitialUserData(user);
         setUser(user);
+        await createInitialUserData(user);
       } else {
         setUser(null);
       }
@@ -69,11 +69,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (isLoading) return;
+    
+    // Allow access to about and subscription page for both logged-in and logged-out users
+    if (['/about', '/subscription'].includes(pathname)) return;
 
     const isPublicRoute = publicRoutes.includes(pathname);
 
-    if (user && isPublicRoute && pathname !== '/about' && pathname !== '/subscription') {
+    if (user && isPublicRoute) {
       router.push('/');
+    } else if (!user && !isPublicRoute) {
+      router.push('/login');
     }
   }, [user, isLoading, pathname, router]);
 
