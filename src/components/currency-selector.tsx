@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useAppContext } from "@/context/app-context";
@@ -27,8 +28,8 @@ export function CurrencySelector() {
   return (
     <div className="flex items-center gap-2">
       <Globe className="h-5 w-5 text-muted-foreground" />
-      <Select value={currency} onValueChange={(value: Currency) => setCurrency(value)}>
-        <SelectTrigger className="w-[120px] h-9">
+      <Select value={currency} onValuechange={(value: Currency) => setCurrency(value)}>
+        <SelectTrigger className="w-auto min-w-[120px] h-9">
           <SelectValue placeholder="Currency" />
         </SelectTrigger>
         <SelectContent>
