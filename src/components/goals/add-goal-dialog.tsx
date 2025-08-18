@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect } from 'react';
@@ -58,7 +59,7 @@ export function AddGoalDialog({ isOpen, onOpenChange, goal }: AddGoalDialogProps
     resolver: zodResolver(goalSchema),
     defaultValues: {
       name: '',
-      targetAmount: undefined,
+      targetAmount: '' as any,
       currentAmount: 0,
       deadline: new Date(),
     },
@@ -73,7 +74,7 @@ export function AddGoalDialog({ isOpen, onOpenChange, goal }: AddGoalDialogProps
     } else if (!goal && isOpen) {
         form.reset({
             name: '',
-            targetAmount: undefined,
+            targetAmount: '' as any,
             currentAmount: 0,
             deadline: new Date(),
         });
