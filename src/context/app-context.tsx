@@ -14,12 +14,10 @@ import {
   deleteDoc, 
   updateDoc,
   query,
-  where,
   writeBatch,
   getDocs
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { CATEGORIES, MOCK_BUDGETS } from '@/lib/data';
 import { format, startOfMonth, isSameMonth, parseISO } from 'date-fns';
 
 interface AppContextType {
@@ -32,7 +30,7 @@ interface AppContextType {
   profile: Profile | null;
   currency: Currency;
   addExpense: (expense: Omit<Expense, 'id'>) => Promise<void>;
-  updateBudgets: (newBudgets: Budget[]) => Promise<void>;
+  updateBudgets: (newBudgets: Pick<Budget, 'category' | 'amount'>[]) => Promise<void>;
   setCurrency: (currency: Currency) => Promise<void>;
   isLoading: boolean;
   addBorrowLend: (item: Omit<BorrowLend, 'id' | 'status' | 'date'>) => Promise<void>;
@@ -65,47 +63,6 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [currency, setCurrency] = useState<Currency>('USD');
   const [isLoading, setIsLoading] = useState(true);
-  const [lastCheckedMonth, setLastCheckedMonth] = useState<string | null>(null);
-
-  const archiveOldExpenses = useCallback(async (userId: string) => {
-    const now = new Date();
-    const currentMonthKey = format(now, 'yyyy-MM');
-
-    // Prevent re-running archive for the same month
-    if (lastCheckedMonth === currentMonthKey) return; 
-
-    const userDocRef = doc(db, 'users', userId);
-    const expensesColRef = collection(userDocRef, 'expenses');
-    const q = query(expensesColRef);
-    const querySnapshot = await getDocs(q);
-
-    const batch = writeBatch(db);
-    let hasOldExpenses = false;
-
-    querySnapshot.forEach(doc => {
-      const expense = doc.data() as Expense;
-      const expenseDate = parseISO(expense.date);
-      if (!isSameMonth(now, expenseDate)) {
-        hasOldExpenses = true;
-        const archiveMonthKey = format(expenseDate, 'yyyy-MM');
-        const archiveDocRef = doc(userDocRef, 'monthlyArchives', archiveMonthKey, 'expenses', doc.id);
-        batch.set(archiveDocRef, expense);
-        batch.delete(doc.ref);
-      }
-    });
-
-    if (hasOldExpenses) {
-      await batch.commit();
-      console.log('Old expenses have been archived.');
-    }
-    
-    // Update the last checked month
-    const profileRef = doc(db, 'users', userId);
-    await setDoc(profileRef, { lastCheckedMonth: currentMonthKey }, { merge: true });
-    setLastCheckedMonth(currentMonthKey);
-
-  }, [lastCheckedMonth]);
-
 
   // Load data when user is authenticated
   useEffect(() => {
@@ -122,6 +79,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       };
 
       const unsubscribes = dataCollections.map(col => {
+        // For expenses, we only fetch for the current month
         const colRef = collection(db, 'users', user.uid, col);
         return onSnapshot(colRef, snapshot => {
           const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any[];
@@ -133,7 +91,6 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
         const data = doc.data();
         if (data) {
           setCurrency(data.currency || 'USD');
-          setLastCheckedMonth(data.lastCheckedMonth || null);
           setProfile({
             email: user.email || '',
             name: data.name,
@@ -144,7 +101,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
         }
       });
       
-      archiveOldExpenses(user.uid).finally(() => setIsLoading(false));
+      setIsLoading(false);
       
       return () => {
         unsubscribes.forEach(unsub => unsub());
@@ -162,7 +119,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       setCurrency('USD');
       setIsLoading(true);
     }
-  }, [user, archiveOldExpenses]);
+  }, [user]);
 
   const addDocForUser = async (collectionName: string, data: object) => {
     if (!user) throw new Error("User not authenticated");
@@ -181,11 +138,12 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   
   const addExpense = async (expense: Omit<Expense, 'id'>) => addDocForUser('expenses', expense);
 
-  const updateBudgets = async (newBudgets: Omit<Budget, 'id'>[]) => {
+  const updateBudgets = async (newBudgets: Pick<Budget, 'category' | 'amount'>[]) => {
     if (!user) throw new Error("User not authenticated");
     const batch = writeBatch(db);
     const budgetsColRef = collection(db, 'users', user.uid, 'budgets');
     
+    // Find existing budget documents to update them
     const existingBudgetsSnapshot = await getDocs(budgetsColRef);
     const existingBudgetsMap = new Map(existingBudgetsSnapshot.docs.map(d => [d.data().category, d.id]));
 
@@ -267,12 +225,6 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
             category: 'Lending',
           });
         } else { // type === 'lend'
-          await addExpense({
-            description: `Repayment from ${item.person}`,
-            amount: -item.amount,
-            date: new Date().toISOString().split('T')[0],
-            category: 'Lending'
-          });
           await addIncome({
             source: 'Other',
             bank: `Repayment from ${item.person}`,

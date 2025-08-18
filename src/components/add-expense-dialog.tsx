@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useTransition } from 'react';
@@ -96,7 +97,12 @@ export function AddExpenseDialog({ isOpen, onOpenChange }: AddExpenseDialogProps
       date: format(values.date, 'yyyy-MM-dd'),
     });
     toast({ title: 'Expense Added', description: 'Your expense has been successfully recorded.' });
-    form.reset();
+    form.reset({
+      description: '',
+      amount: '' as any,
+      date: new Date(),
+      category: undefined,
+    });
     onOpenChange(false);
   };
 

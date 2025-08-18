@@ -21,8 +21,6 @@ import { CategoryIcon } from '@/components/icons';
 import { useToast } from '@/hooks/use-toast';
 import { useEffect } from 'react';
 import { Skeleton } from '../ui/skeleton';
-import { formatCurrency } from '@/lib/utils';
-import { Budget } from '@/lib/types';
 
 const budgetSchema = z.object({
   category: z.string(),
@@ -52,7 +50,7 @@ export function BudgetClient() {
   });
 
   useEffect(() => {
-    if (!isLoading && contextBudgets.length > 0) {
+    if (contextBudgets.length > 0) {
       const allBudgets = budgetableCategories.map(cat => {
         const existingBudget = contextBudgets.find(b => b.category === cat.name);
         return {
@@ -62,7 +60,7 @@ export function BudgetClient() {
       });
       replace(allBudgets);
     }
-  }, [isLoading, contextBudgets, replace]);
+  }, [contextBudgets, replace]);
 
   const onSubmit = (data: z.infer<typeof formSchema>) => {
     updateBudgets(data.budgets.filter(b => b.amount >= 0));
@@ -72,7 +70,7 @@ export function BudgetClient() {
     });
   };
 
-  if (isLoading || fields.length === 0) {
+  if (isLoading) {
     return <BudgetSkeleton />;
   }
 

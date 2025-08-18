@@ -38,12 +38,9 @@ const createInitialUserData = async (user: User) => {
         // Set up default budgets in the 'budgets' subcollection
         const budgetsColRef = collection(userDocRef, 'budgets');
         MOCK_BUDGETS.forEach(budget => {
-            const newBudgetRef = doc(budgetsColRef);
+            const newBudgetRef = doc(budgetsColRef); // Creates a new doc with a random ID
             batch.set(newBudgetRef, budget);
         });
-        
-        // Add other initial collections if needed (e.g., empty expenses)
-        // For now, we'll let them be created on first use.
 
         await batch.commit();
     }
@@ -56,10 +53,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        createInitialUserData(user);
+        await createInitialUserData(user);
+        setUser(user);
+      } else {
+        setUser(null);
       }
       setIsLoading(false);
     });
@@ -85,11 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const signup = async (email: string, password: string) => {
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    if(userCredential.user) {
-      await createInitialUserData(userCredential.user);
-    }
-    return userCredential;
+    return createUserWithEmailAndPassword(auth, email, password);
   }
 
   const logout = () => {
