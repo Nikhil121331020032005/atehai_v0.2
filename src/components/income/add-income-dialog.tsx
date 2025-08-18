@@ -62,7 +62,7 @@ export function AddIncomeDialog({ isOpen, onOpenChange }: AddIncomeDialogProps) 
     resolver: zodResolver(incomeSchema),
     defaultValues: {
       bank: '',
-      amount: undefined,
+      amount: '' as any,
       date: new Date(),
     },
   });
