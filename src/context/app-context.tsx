@@ -1,4 +1,3 @@
-
 'use client';
 
 import { createContext, useContext, useState, useEffect, type ReactNode, useCallback } from 'react';
@@ -17,7 +16,8 @@ import {
   writeBatch,
   getDocs,
   serverTimestamp,
-  increment
+  increment,
+  where
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { format, startOfMonth, isSameMonth, parseISO, addMonths } from 'date-fns';
@@ -120,7 +120,9 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
             avatarUrl: data.avatarUrl,
             isPremium: data.isPremium || false,
             resetsThisMonth: data.resetsThisMonth || 0,
-            subscriptionEndDate: data.subscriptionEndDate
+            subscriptionEndDate: data.subscriptionEndDate,
+            stripeCustomerId: data.stripeCustomerId,
+            stripeSubscriptionId: data.stripeSubscriptionId,
           })
         }
       });
@@ -324,6 +326,8 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   });
 
   const upgradeToPremium = requireAuth(async () => {
+    // This function is now deprecated in favor of Stripe checkout flow.
+    // It can be used for manual overrides or testing.
     const userDocRef = doc(db, 'users', user!.uid);
     const subscriptionEndDate = format(addMonths(new Date(), 1), 'yyyy-MM-dd');
     await updateDoc(userDocRef, { 
@@ -340,7 +344,8 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     const userDocRef = doc(db, 'users', user!.uid);
     await updateDoc(userDocRef, {
       isPremium: false,
-      subscriptionEndDate: null
+      subscriptionEndDate: null,
+      stripeSubscriptionId: null, // Also clear stripe subscription id
     });
   });
 

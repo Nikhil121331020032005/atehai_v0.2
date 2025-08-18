@@ -1,13 +1,14 @@
-
 'use client';
 
 import AppLayout from "@/components/app-layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Check, Gem, Lock, RotateCcw, Moon } from "lucide-react";
-import { useAppContext } from "@/context/app-context";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { createCheckoutSession } from "@/lib/actions";
+import { getStripe } from "@/lib/stripe-client";
+import { useToast } from "@/hooks/use-toast";
 
 const premiumFeatures = [
     {
@@ -29,18 +30,36 @@ const premiumFeatures = [
 ];
 
 export default function SubscriptionPage() {
-    const { upgradeToPremium } = useAppContext();
     const [isLoading, setIsLoading] = useState(false);
     const router = useRouter();
+    const { toast } = useToast();
 
     const handleUpgrade = async () => {
         setIsLoading(true);
         try {
-            await upgradeToPremium();
-            router.push('/');
-        } catch (error) {
-            console.error("Upgrade failed:", error);
-        } finally {
+            const { sessionId, error } = await createCheckoutSession();
+
+            if (error || !sessionId) {
+                throw new Error(error || "Failed to create checkout session.");
+            }
+
+            const stripe = await getStripe();
+            if (!stripe) {
+                throw new Error("Stripe.js failed to load.");
+            }
+            
+            const { error: stripeError } = await stripe.redirectToCheckout({ sessionId });
+            
+            if (stripeError) {
+                throw stripeError;
+            }
+
+        } catch (error: any) {
+            toast({
+                variant: 'destructive',
+                title: 'Subscription Error',
+                description: error.message || 'Could not redirect to checkout. Please try again.',
+            })
             setIsLoading(false);
         }
     }
@@ -80,10 +99,10 @@ export default function SubscriptionPage() {
                             onClick={handleUpgrade}
                             disabled={isLoading}
                         >
-                            {isLoading ? "Upgrading..." : "Upgrade to Premium"}
+                            {isLoading ? "Redirecting to Checkout..." : "Upgrade to Premium"}
                         </Button>
                         <p className="text-xs text-muted-foreground text-center mt-4">
-                            This is a placeholder. No real payment will be processed. Clicking this button will enable premium features for your account.
+                            You will be redirected to our secure payment partner, Stripe.
                         </p>
                     </CardContent>
                 </Card>

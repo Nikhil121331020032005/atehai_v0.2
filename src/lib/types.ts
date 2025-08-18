@@ -92,4 +92,6 @@ export type Profile = {
     isPremium?: boolean;
     resetsThisMonth?: number;
     subscriptionEndDate?: string;
+    stripeCustomerId?: string;
+    stripeSubscriptionId?: string;
 };
