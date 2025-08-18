@@ -1,0 +1,78 @@
+'use client';
+
+import * as React from 'react';
+import { usePathname } from 'next/navigation';
+import Link from 'next/link';
+import {
+  SidebarProvider,
+  Sidebar,
+  SidebarHeader,
+  SidebarContent,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
+  SidebarFooter,
+  SidebarTrigger,
+  SidebarInset,
+} from '@/components/ui/sidebar';
+import { Button } from '@/components/ui/button';
+import { Home, PlusCircle, Wallet } from 'lucide-react';
+import { Logo } from '@/components/logo';
+import { AddExpenseDialog } from '@/components/add-expense-dialog';
+
+export default function AppLayout({ children, pageTitle }: { children: React.ReactNode; pageTitle: string }) {
+  const pathname = usePathname();
+  const [isDialogOpen, setIsDialogOpen] = React.useState(false);
+
+  return (
+    <SidebarProvider>
+      <Sidebar>
+        <SidebarHeader>
+          <Logo />
+        </SidebarHeader>
+        <SidebarContent>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild isActive={pathname === '/'}>
+                <Link href="/">
+                  <Home />
+                  Dashboard
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild isActive={pathname === '/budgets'}>
+                <Link href="/budgets">
+                  <Wallet />
+                  Budgets
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarContent>
+        <SidebarFooter>
+          <Button className="w-full" onClick={() => setIsDialogOpen(true)}>
+            <PlusCircle className="mr-2" /> New Expense
+          </Button>
+        </SidebarFooter>
+      </Sidebar>
+      <SidebarInset>
+        <header className="flex items-center justify-between border-b p-4">
+          <div className="flex items-center gap-2">
+            <SidebarTrigger className="md:hidden" />
+            <h1 className="text-2xl font-semibold tracking-tight">{pageTitle}</h1>
+          </div>
+          <div className="hidden md:block">
+            <Button onClick={() => setIsDialogOpen(true)}>
+              <PlusCircle className="mr-2" /> Add Expense
+            </Button>
+          </div>
+        </header>
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
+          {children}
+          <AddExpenseDialog isOpen={isDialogOpen} onOpenChange={setIsDialogOpen} />
+        </main>
+      </SidebarInset>
+    </SidebarProvider>
+  );
+}
