@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo } from 'react';
@@ -45,18 +46,20 @@ function DashboardSkeleton() {
   return (
     <div className="flex flex-col gap-8">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <Skeleton className="h-28 rounded-lg" />
-        <Skeleton className="h-28 rounded-lg" />
-        <Skeleton className="h-28 rounded-lg" />
+        <Skeleton className="h-28 rounded-xl" />
+        <Skeleton className="h-28 rounded-xl" />
+        <Skeleton className="h-28 rounded-xl" />
       </div>
       <div className="grid gap-8 lg:grid-cols-5">
         <div className="lg:col-span-3">
-          <Skeleton className="h-96 rounded-lg" />
+          <Skeleton className="h-96 rounded-xl" />
         </div>
         <div className="lg:col-span-2">
-          <Skeleton className="h-96 rounded-lg" />
+          <Skeleton className="h-96 rounded-xl" />
         </div>
       </div>
     </div>
   );
 }
+
+    

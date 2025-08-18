@@ -19,13 +19,18 @@ import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
+import { useAppContext } from "@/context/app-context";
+import { EditProfileDialog } from "./edit-profile-dialog";
+import { Skeleton } from "../ui/skeleton";
 
 
 export default function ProfilePage() {
     const { user, logout } = useAuth();
+    const { profile, isLoading } = useAppContext();
     const router = useRouter();
     const { toast } = useToast();
     const [archivedMonths, setArchivedMonths] = useState<string[]>([]);
+    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
     useEffect(() => {
         if (user) {
@@ -48,6 +53,46 @@ export default function ProfilePage() {
         }
     }
 
+    if (isLoading || !profile) {
+        return (
+            <AppLayout pageTitle="Profile">
+                <div className="max-w-4xl mx-auto space-y-8">
+                    <Card>
+                        <CardHeader>
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-4">
+                                    <Skeleton className="h-20 w-20 rounded-full" />
+                                    <div>
+                                        <Skeleton className="h-8 w-40 mb-2" />
+                                        <Skeleton className="h-4 w-60" />
+                                    </div>
+                                </div>
+                                <Skeleton className="h-10 w-10" />
+                            </div>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            <div className="grid md:grid-cols-2 gap-4">
+                                <Skeleton className="h-12 w-full" />
+                                <Skeleton className="h-12 w-full" />
+                                <Skeleton className="h-12 w-full" />
+                            </div>
+                            <Skeleton className="h-10 w-32" />
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader>
+                            <Skeleton className="h-6 w-48 mb-2" />
+                            <Skeleton className="h-4 w-72" />
+                        </CardHeader>
+                        <CardContent>
+                           <Skeleton className="h-24 w-full" />
+                        </CardContent>
+                    </Card>
+                </div>
+            </AppLayout>
+        )
+    }
+
     return (
         <AppLayout pageTitle="Profile">
             <div className="max-w-4xl mx-auto space-y-8">
@@ -56,17 +101,17 @@ export default function ProfilePage() {
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-4">
                                 <Avatar className="h-20 w-20">
-                                    <AvatarImage src="https://placehold.co/100x100.png" alt="@shadcn" data-ai-hint="user avatar" />
+                                    <AvatarImage src={profile.avatarUrl} alt={profile.name || 'User Avatar'} />
                                     <AvatarFallback>
-                                        {user?.email?.charAt(0).toUpperCase()}
+                                        {profile.name ? profile.name.charAt(0).toUpperCase() : user?.email?.charAt(0).toUpperCase()}
                                     </AvatarFallback>
                                 </Avatar>
                                 <div>
-                                    <CardTitle className="text-3xl">Alex Doe</CardTitle>
+                                    <CardTitle className="text-3xl">{profile.name || 'User'}</CardTitle>
                                     <CardDescription>Your personal account details.</CardDescription>
                                 </div>
                             </div>
-                             <Button variant="outline" size="icon">
+                             <Button variant="outline" size="icon" onClick={() => setIsEditDialogOpen(true)}>
                                 <Edit className="h-4 w-4" />
                                 <span className="sr-only">Edit Profile</span>
                             </Button>
@@ -76,15 +121,15 @@ export default function ProfilePage() {
                         <div className="grid md:grid-cols-2 gap-4">
                             <div className="flex items-center justify-between border rounded-lg p-3">
                                 <span className="text-muted-foreground text-sm">Email</span>
-                                <span className="font-medium">{user?.email}</span>
+                                <span className="font-medium">{profile.email}</span>
                             </div>
                              <div className="flex items-center justify-between border rounded-lg p-3">
                                 <span className="text-muted-foreground text-sm">Age</span>
-                                <span className="font-medium">28</span>
+                                <span className="font-medium">{profile.age || 'Not set'}</span>
                             </div>
                              <div className="flex items-center justify-between border rounded-lg p-3">
                                 <span className="text-muted-foreground text-sm">Gender</span>
-                                <span className="font-medium">Male</span>
+                                <span className="font-medium">{profile.gender || 'Not set'}</span>
                             </div>
                         </div>
 
@@ -120,6 +165,13 @@ export default function ProfilePage() {
                 </Card>
 
             </div>
+            <EditProfileDialog
+                isOpen={isEditDialogOpen}
+                onOpenChange={setIsEditDialogOpen}
+                profile={profile}
+            />
         </AppLayout>
     )
 }
+
+    

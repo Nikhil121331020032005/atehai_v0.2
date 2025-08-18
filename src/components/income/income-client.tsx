@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -27,18 +28,13 @@ import {
 export function IncomeClient() {
   const { income, isLoading, currency, deleteIncome, updateIncomeStatus } = useAppContext();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isClient, setIsClient] = useState(false);
-
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
 
   const handleStatusChange = (id: string, currentStatus: IncomeStatus) => {
     const newStatus = currentStatus === 'Pending' ? 'Received' : 'Pending';
     updateIncomeStatus(id, newStatus);
   };
 
-  if (isLoading || !isClient) {
+  if (isLoading) {
     return <PageSkeleton />;
   }
 
@@ -127,30 +123,34 @@ export function IncomeClient() {
 function PageSkeleton() {
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center mb-6">
-        <Skeleton className="h-8 w-72" />
-        <Skeleton className="h-10 w-32" />
-      </div>
-      <Card>
-        <CardHeader>
-          <Skeleton className="h-6 w-1/4" />
-          <Skeleton className="h-4 w-1/2" />
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            {[...Array(5)].map((_, i) => (
-                <div key={i} className="flex justify-between items-center p-2">
-                    <Skeleton className="h-5 w-1/6" />
-                    <Skeleton className="h-5 w-1/6" />
-                    <Skeleton className="h-5 w-1/6" />
-                    <Skeleton className="h-5 w-1/6" />
-                    <Skeleton className="h-5 w-1/6" />
-                    <Skeleton className="h-5 w-1/6" />
+        <div className="flex justify-between items-center mb-6">
+            <Skeleton className="h-8 w-72" />
+            <Skeleton className="h-10 w-32" />
+        </div>
+        <Card>
+            <CardHeader>
+                <Skeleton className="h-6 w-1/4" />
+                <Skeleton className="h-4 w-1/2" />
+            </CardHeader>
+            <CardContent>
+                <div className="space-y-4">
+                {[...Array(5)].map((_, i) => (
+                    <div key={i} className="flex justify-between items-center p-2">
+                        <Skeleton className="h-5 w-1/6" />
+                        <Skeleton className="h-5 w-1/6" />
+                        <Skeleton className="h-5 w-1/6" />
+                        <Skeleton className="h-5 w-1/6" />
+                        <Skeleton className="h-5 w-1/6" />
+                        <div className="flex justify-end w-1/6">
+                          <Skeleton className="h-8 w-8" />
+                        </div>
+                    </div>
+                ))}
                 </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+            </CardContent>
+        </Card>
     </div>
   );
 }
+
+    

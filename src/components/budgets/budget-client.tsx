@@ -53,15 +53,17 @@ export function BudgetClient() {
     // This effect ensures the form is populated once the budgets are loaded from context.
     // It maps over all budgetable categories, finds the corresponding budget from the context,
     // and defaults to 0 if one doesn't exist.
-    const allBudgets = budgetableCategories.map(cat => {
-      const existingBudget = contextBudgets.find(b => b.category === cat.name);
-      return {
-        category: cat.name,
-        amount: existingBudget?.amount ?? 0,
-      };
-    });
-    replace(allBudgets);
-  }, [contextBudgets, replace]);
+    if (!isLoading) {
+      const allBudgets = budgetableCategories.map(cat => {
+        const existingBudget = contextBudgets.find(b => b.category === cat.name);
+        return {
+          category: cat.name,
+          amount: existingBudget?.amount ?? 0,
+        };
+      });
+      replace(allBudgets);
+    }
+  }, [contextBudgets, isLoading, replace]);
 
   const onSubmit = (data: z.infer<typeof formSchema>) => {
     updateBudgets(data.budgets.filter(b => b.amount >= 0));
@@ -136,17 +138,11 @@ function BudgetSkeleton() {
       </div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {budgetableCategories.map((cat) => (
-          <Card key={cat.name}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <Skeleton className="h-5 w-24" />
-              <Skeleton className="h-4 w-4" />
-            </CardHeader>
-            <CardContent>
-              <Skeleton className="h-10 w-full" />
-            </CardContent>
-          </Card>
+            <Skeleton key={cat.name} className="h-28 w-full rounded-xl" />
         ))}
       </div>
     </div>
   )
 }
+
+    

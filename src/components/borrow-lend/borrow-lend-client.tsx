@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo, useState } from 'react';
@@ -161,16 +162,28 @@ function PageSkeleton() {
       <div className="flex justify-end mb-4">
         <Skeleton className="h-10 w-32" />
       </div>
-      <div className="grid md:grid-cols-2 gap-8">
-        <div className="space-y-4">
-          <Skeleton className="h-8 w-48" />
-          <Skeleton className="h-40 w-full" />
-        </div>
-        <div className="space-y-4">
-          <Skeleton className="h-8 w-48" />
-          <Skeleton className="h-40 w-full" />
-        </div>
+      <div className="grid md:grid-cols-2 gap-8 items-start">
+        <Card>
+            <CardHeader>
+                <Skeleton className="h-6 w-1/2" />
+                <Skeleton className="h-4 w-3/4" />
+            </CardHeader>
+            <CardContent>
+                <Skeleton className="h-40 w-full" />
+            </CardContent>
+        </Card>
+        <Card>
+            <CardHeader>
+                <Skeleton className="h-6 w-1/2" />
+                <Skeleton className="h-4 w-3/4" />
+            </CardHeader>
+            <CardContent>
+                <Skeleton className="h-40 w-full" />
+            </CardContent>
+        </Card>
       </div>
     </div>
   )
 }
+
+    

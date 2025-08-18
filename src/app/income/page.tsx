@@ -1,3 +1,4 @@
+
 import AppLayout from "@/components/app-layout";
 import { IncomeClient } from "@/components/income/income-client";
 import { Suspense } from "react";
@@ -16,8 +17,13 @@ export default function IncomePage() {
 function PageSkeleton() {
     return (
       <div className="space-y-6">
-        <Skeleton className="h-8 w-48" />
-        <Skeleton className="h-64 w-full" />
+        <div className="flex justify-between items-center mb-6">
+            <Skeleton className="h-8 w-72" />
+            <Skeleton className="h-10 w-32" />
+        </div>
+        <Skeleton className="h-80 w-full rounded-xl" />
       </div>
     )
   }
+
+    
