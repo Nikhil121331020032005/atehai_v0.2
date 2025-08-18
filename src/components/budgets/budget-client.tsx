@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useForm, useFieldArray } from 'react-hook-form';
@@ -38,6 +39,9 @@ export function BudgetClient() {
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
+    defaultValues: {
+      budgets: [],
+    }
   });
 
   const { fields, replace } = useFieldArray({
@@ -46,27 +50,27 @@ export function BudgetClient() {
   });
 
   useEffect(() => {
-    if (!isLoading && contextBudgets.length > 0) {
-      const initialBudgets = CATEGORIES.map(cat => {
+    if (!isLoading) {
+      const allBudgets = CATEGORIES.map(cat => {
         const existingBudget = contextBudgets.find(b => b.category === cat.name);
         return {
           category: cat.name,
           amount: existingBudget?.amount ?? 0,
         };
       });
-      replace(initialBudgets);
+      replace(allBudgets);
     }
   }, [isLoading, contextBudgets, replace]);
 
   const onSubmit = (data: z.infer<typeof formSchema>) => {
-    updateBudgets(data.budgets);
+    updateBudgets(data.budgets.filter(b => b.amount >= 0));
     toast({
       title: 'Budgets Updated',
       description: 'Your new budget settings have been saved.',
     });
   };
 
-  if (isLoading) {
+  if (isLoading || fields.length === 0) {
     return <BudgetSkeleton />;
   }
 
