@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useAuth } from "@/context/auth-context";
 import { useAppContext } from "@/context/app-context";
 import { useToast } from "@/hooks/use-toast";
-import { LogOut, FileClock, Edit, RotateCcw, Info, Lock } from "lucide-react";
+import { LogOut, FileClock, Edit, RotateCcw, Info, Lock, Gem, Star } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -30,7 +30,7 @@ import {
 import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useEffect, useState } from "react";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { EditProfileDialog } from "@/components/profile/edit-profile-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
@@ -137,7 +137,10 @@ export default function ProfilePage() {
                                     </AvatarFallback>
                                 </Avatar>
                                 <div>
-                                    <CardTitle className="text-3xl">{profile.name || 'User'}</CardTitle>
+                                    <CardTitle className="text-3xl flex items-center gap-2">
+                                        {profile.name || 'User'}
+                                        {profile.isPremium && <Gem className="h-6 w-6 text-primary" />}
+                                    </CardTitle>
                                     <CardDescription>Your personal account details.</CardDescription>
                                 </div>
                             </div>
@@ -175,6 +178,30 @@ export default function ProfilePage() {
                         </div>
                     </CardContent>
                 </Card>
+
+                {profile.isPremium && (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <Star className="h-5 w-5 text-yellow-500" />
+                                Premium Membership
+                            </CardTitle>
+                            <CardDescription>Thank you for being a premium member. Here are your subscription details.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                           <div className="flex items-center justify-between border rounded-lg p-3">
+                                <span className="text-muted-foreground text-sm">Status</span>
+                                <span className="font-medium text-primary">Active</span>
+                            </div>
+                             <div className="flex items-center justify-between border rounded-lg p-3">
+                                <span className="text-muted-foreground text-sm">Renews On</span>
+                                <span className="font-medium">{profile.subscriptionEndDate ? format(parseISO(profile.subscriptionEndDate), 'PPP') : 'N/A'}</span>
+                            </div>
+                            <Button disabled>Manage Subscription</Button>
+                             <p className="text-xs text-muted-foreground">This is a placeholder. A real app would link to a payment provider's customer portal.</p>
+                        </CardContent>
+                    </Card>
+                )}
 
                  <Card>
                     <CardHeader>

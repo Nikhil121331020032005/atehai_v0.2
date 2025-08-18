@@ -20,7 +20,7 @@ import {
   increment
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { format, startOfMonth, isSameMonth, parseISO } from 'date-fns';
+import { format, startOfMonth, isSameMonth, parseISO, addMonths } from 'date-fns';
 import { MOCK_BUDGETS, MOCK_EXPENSES } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
@@ -119,6 +119,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
             avatarUrl: data.avatarUrl,
             isPremium: data.isPremium || false,
             resetsThisMonth: data.resetsThisMonth || 0,
+            subscriptionEndDate: data.subscriptionEndDate
           })
         }
       });
@@ -323,7 +324,11 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
 
   const upgradeToPremium = requireAuth(async () => {
     const userDocRef = doc(db, 'users', user!.uid);
-    await updateDoc(userDocRef, { isPremium: true });
+    const subscriptionEndDate = format(addMonths(new Date(), 1), 'yyyy-MM-dd');
+    await updateDoc(userDocRef, { 
+      isPremium: true,
+      subscriptionEndDate: subscriptionEndDate
+    });
     toast({
         title: 'Congratulations!',
         description: 'You are now a premium member.',

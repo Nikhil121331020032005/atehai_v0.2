@@ -91,4 +91,5 @@ export type Profile = {
     avatarUrl?: string;
     isPremium?: boolean;
     resetsThisMonth?: number;
+    subscriptionEndDate?: string;
 };
