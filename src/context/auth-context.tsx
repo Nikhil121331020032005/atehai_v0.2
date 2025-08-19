@@ -63,7 +63,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setUser(user);
-        await createInitialUserData(user);
+        if (db) {
+          await createInitialUserData(user);
+        }
       } else {
         setUser(null);
       }
