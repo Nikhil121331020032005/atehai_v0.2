@@ -104,7 +104,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       return; 
     }
 
-    if (!user) {
+    if (!user || !db) {
       if (unsubscribes.current.length > 0) {
         unsubscribes.current.forEach(unsub => unsub());
         unsubscribes.current = [];
@@ -167,7 +167,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
 
   const requireAuth = (action: Function) => {
     return (...args: any[]) => {
-      if (!user) {
+      if (!user || !db) {
         toast({
           variant: "destructive",
           title: "Authentication Required",
@@ -181,22 +181,22 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   };
 
   const addDocForUser = async (collectionName: string, data: object) => {
-    await addDoc(collection(db, 'users', user!.uid, collectionName), data);
+    await addDoc(collection(db!, 'users', user!.uid, collectionName), data);
   };
   
   const deleteDocForUser = async (collectionName: string, docId: string) => {
-    await deleteDoc(doc(db, 'users', user!.uid, collectionName, docId));
+    await deleteDoc(doc(db!, 'users', user!.uid, collectionName, docId));
   }
 
   const updateDocForUser = async (collectionName: string, docId: string, data: object) => {
-    await updateDoc(doc(db, 'users', user!.uid, collectionName, docId), data);
+    await updateDoc(doc(db!, 'users', user!.uid, collectionName, docId), data);
   }
   
   const addExpense = requireAuth(async (expense: Omit<Expense, 'id'>) => addDocForUser('expenses', expense));
 
   const updateBudgets = requireAuth(async (newBudgets: Pick<Budget, 'category' | 'amount'>[]) => {
-    const batch = writeBatch(db);
-    const budgetsColRef = collection(db, 'users', user!.uid, 'budgets');
+    const batch = writeBatch(db!);
+    const budgetsColRef = collection(db!, 'users', user!.uid, 'budgets');
     
     const existingBudgetsSnapshot = await getDocs(budgetsColRef);
     const existingBudgetsMap = new Map(existingBudgetsSnapshot.docs.map(d => [d.data().category, d.id]));
@@ -211,16 +211,16 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   });
   
   const handleSetCurrency = requireAuth(async (c: Currency) => {
-    const userDocRef = doc(db, 'users', user!.uid);
+    const userDocRef = doc(db!, 'users', user!.uid);
     await updateDoc(userDocRef, { currency: c });
     setCurrency(c);
   });
 
   const updateProfile = requireAuth(async (data: Partial<Omit<Profile, 'email'>>, newAvatar?: File | null) => {
-    const userDocRef = doc(db, 'users', user!.uid);
+    const userDocRef = doc(db!, 'users', user!.uid);
 
     let avatarUrl;
-    if (newAvatar) {
+    if (newAvatar && storage) {
         const storageRef = ref(storage, `profile-pictures/${user!.uid}`);
         await uploadBytes(storageRef, newAvatar);
         avatarUrl = await getDownloadURL(storageRef);
@@ -324,29 +324,29 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
         }
     }
 
-    const batch = writeBatch(db);
+    const batch = writeBatch(db!);
     const collectionsToDelete = ['expenses', 'income', 'borrowLend'];
 
     for (const collectionName of collectionsToDelete) {
-      const colRef = collection(db, 'users', user!.uid, collectionName);
+      const colRef = collection(db!, 'users', user!.uid, collectionName);
       const snapshot = await getDocs(colRef);
       snapshot.docs.forEach(doc => batch.delete(doc.ref));
     }
 
-    const goalsColRef = collection(db, 'users', user!.uid, 'goals');
+    const goalsColRef = collection(db!, 'users', user!.uid, 'goals');
     const goalsSnapshot = await getDocs(goalsColRef);
     goalsSnapshot.docs.forEach(doc => {
         batch.update(doc.ref, { currentAmount: 0 });
     });
 
-    const userDocRef = doc(db, 'users', user!.uid);
+    const userDocRef = doc(db!, 'users', user!.uid);
     batch.update(userDocRef, { resetsThisMonth: increment(1) });
 
     await batch.commit();
   });
   
   const upgradeToPremium = requireAuth(async () => {
-    const userDocRef = doc(db, 'users', user!.uid);
+    const userDocRef = doc(db!, 'users', user!.uid);
     await updateDoc(userDocRef, { isPremium: true });
     toast({ title: "Success", description: "You are now a premium user." });
   });

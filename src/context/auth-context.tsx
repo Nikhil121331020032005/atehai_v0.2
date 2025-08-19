@@ -23,6 +23,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const publicRoutes = ['/login', '/signup'];
 
 const createInitialUserData = async (user: User) => {
+    if (!db) return; // Do not proceed if firebase is not initialized
     const userDocRef = doc(db, 'users', user.uid);
     const userDoc = await getDoc(userDocRef);
 
@@ -55,6 +56,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
   useEffect(() => {
+    if (!auth) {
+        setIsLoading(false);
+        return;
+    }
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setUser(user);
@@ -80,18 +85,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 
   const login = (email: string, password: string) => {
+    if (!auth) return Promise.reject(new Error("Firebase not initialized"));
     return signInWithEmailAndPassword(auth, email, password);
   }
 
   const signup = async (email: string, password: string) => {
+    if (!auth) return Promise.reject(new Error("Firebase not initialized"));
     return createUserWithEmailAndPassword(auth, email, password);
   }
 
   const logout = () => {
+    if (!auth) return Promise.reject(new Error("Firebase not initialized"));
     return signOut(auth);
   }
 
   const handleSendPasswordResetEmail = (email: string) => {
+    if (!auth) return Promise.reject(new Error("Firebase not initialized"));
     return sendPasswordResetEmail(auth, email);
   }
 

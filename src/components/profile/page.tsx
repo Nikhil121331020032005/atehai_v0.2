@@ -33,7 +33,7 @@ export default function ProfilePage() {
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
     useEffect(() => {
-        if (user) {
+        if (user && db) {
             const archiveColRef = collection(db, 'users', user.uid, 'monthlyArchives');
             const unsubscribe = onSnapshot(archiveColRef, (snapshot) => {
                 const months = snapshot.docs.map(doc => doc.id).sort((a, b) => b.localeCompare(a));
@@ -173,5 +173,3 @@ export default function ProfilePage() {
         </AppLayout>
     )
 }
-
-    
