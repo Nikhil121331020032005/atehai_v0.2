@@ -22,7 +22,7 @@ import {
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { format, startOfMonth, isSameMonth, parseISO, addMonths } from 'date-fns';
-import { MOCK_BUDGETS, MOCK_EXPENSES } from '@/lib/data';
+import { MOCK_BUDGETS, MOCK_EXPENSES, MOCK_BORROW_LEND, MOCK_EMIS, MOCK_INCOME, MOCK_GOALS } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 
@@ -89,6 +89,12 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   
   const setupGuestData = () => {
     clearState();
+    setExpenses(MOCK_EXPENSES);
+    setBudgets(MOCK_BUDGETS);
+    setBorrowLend(MOCK_BORROW_LEND);
+    setEmis(MOCK_EMIS);
+    setIncome(MOCK_INCOME);
+    setGoals(MOCK_GOALS);
     setProfile({ email: '', isPremium: true }); // Guest users get premium features to explore
     setIsLoading(false);
   }
@@ -390,5 +396,3 @@ export function useAppContext() {
   }
   return context;
 }
-
-    
