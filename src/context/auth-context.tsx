@@ -7,7 +7,7 @@ import { auth, db } from '@/lib/firebase';
 import { useRouter, usePathname } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
 import { doc, setDoc, getDoc, writeBatch, collection } from 'firebase/firestore';
-import { MOCK_BUDGETS } from '@/lib/data';
+import { CATEGORIES } from '@/lib/data';
 
 interface AuthContextType {
   user: User | null;
@@ -38,9 +38,10 @@ const createInitialUserData = async (user: User) => {
         });
 
         const budgetsColRef = collection(userDocRef, 'budgets');
-        MOCK_BUDGETS.forEach(budget => {
+        // Create budgets with 0 amount for new users
+        CATEGORIES.forEach(category => {
             const newBudgetRef = doc(budgetsColRef);
-            batch.set(newBudgetRef, budget);
+            batch.set(newBudgetRef, { category: category.name, amount: 0 });
         });
 
         await batch.commit();
@@ -96,10 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const value = { user, isLoading, login, signup, logout, sendPasswordResetEmail: handleSendPasswordResetEmail };
 
-  // Show a global loading state only for the very initial load.
-  // Once isLoading is false, we render the children, which will either show
-  // the public content or the user-specific content.
-  if (isLoading) {
+  if (isLoading && !user && !publicRoutes.includes(pathname)) {
     return (
       <div className="flex h-screen w-screen items-center justify-center">
         <div className="w-64 space-y-4">

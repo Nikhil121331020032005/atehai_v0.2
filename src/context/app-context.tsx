@@ -60,7 +60,7 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppContextProvider({ children }: { children: ReactNode }) {
-  const { user } = useAuth();
+  const { user, isLoading: isAuthLoading } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
 
@@ -72,7 +72,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const [goals, setGoals] = useState<Goal[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [currency, setCurrency] = useState<Currency>('USD');
-  const [isLoading, setIsLoading] = useState(true);
+  const [isDataLoading, setIsDataLoading] = useState(true);
   
   const unsubscribes = useRef<(() => void)[]>([]);
 
@@ -95,12 +95,15 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     setEmis(MOCK_EMIS);
     setIncome(MOCK_INCOME);
     setGoals(MOCK_GOALS);
-    setProfile({ email: '', isPremium: true }); // Guest users get premium features to explore
-    setIsLoading(false);
+    setProfile({ email: '', isPremium: true });
+    setIsDataLoading(false);
   }
 
   useEffect(() => {
-    // If user logs out, clear all subscriptions and reset state
+    if (isAuthLoading) {
+      return; 
+    }
+
     if (!user) {
       if (unsubscribes.current.length > 0) {
         unsubscribes.current.forEach(unsub => unsub());
@@ -110,14 +113,12 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       return;
     }
     
-    // If user is logged in but subscriptions are already active, do nothing.
     if (unsubscribes.current.length > 0) {
-      setIsLoading(false);
+      setIsDataLoading(false);
       return;
     }
 
-    // User is logged in and we need to set up subscriptions.
-    setIsLoading(true);
+    setIsDataLoading(true);
 
     const dataCollections = ['expenses', 'budgets', 'borrowLend', 'emis', 'income', 'goals'];
     const setters:any = {
@@ -147,12 +148,12 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
           age: data.age,
           gender: data.gender,
           avatarUrl: data.avatarUrl,
-          isPremium: true, // Everyone is premium for now
+          isPremium: true,
           resetsThisMonth: data.resetsThisMonth || 0,
           subscriptionEndDate: data.subscriptionEndDate,
         })
       }
-      setIsLoading(false); // Set loading to false after profile is fetched
+      setIsDataLoading(false);
     });
     
     newUnsubscribes.push(userProfileUnsubscribe);
@@ -162,7 +163,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       unsubscribes.current.forEach(unsub => unsub());
       unsubscribes.current = [];
     };
-  }, [user, clearState]);
+  }, [user, isAuthLoading, clearState]);
 
   const requireAuth = (action: Function) => {
     return (...args: any[]) => {
@@ -173,7 +174,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
           description: "Please log in or sign up to perform this action.",
         });
         router.push('/login');
-        return Promise.resolve(); // Return a resolved promise to prevent further action
+        return Promise.resolve();
       }
       return action(...args);
     };
@@ -278,7 +279,6 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
           date: new Date().toISOString().split('T')[0],
           status: 'Received'
         });
-        // Add a negative expense to offset the original lending expense
         await addExpense({
             description: `Repayment received from ${item.person}`,
             amount: -item.amount,
@@ -313,7 +313,6 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const resetMonthlyData = requireAuth(async () => {
     if (!profile) return;
     
-    // Premium users have unlimited resets
     if (!profile.isPremium) {
         if (profile.resetsThisMonth && profile.resetsThisMonth >= 2) {
             toast({
@@ -366,7 +365,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       addExpense,
       updateBudgets,
       setCurrency: handleSetCurrency,
-      isLoading,
+      isLoading: isAuthLoading || isDataLoading,
       addBorrowLend,
       updateBorrowLendStatus,
       deleteBorrowLend,
