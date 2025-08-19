@@ -24,7 +24,6 @@ import { CurrencySelector } from './currency-selector';
 import { useAuth } from '@/context/auth-context';
 import { useAppContext } from '@/context/app-context';
 import { ThemeToggle } from './theme-toggle';
-import { Card, CardContent } from './ui/card';
 
 export default function AppLayout({ children, pageTitle }: { children: React.ReactNode; pageTitle: string }) {
   const pathname = usePathname();
@@ -100,6 +99,16 @@ export default function AppLayout({ children, pageTitle }: { children: React.Rea
         </SidebarContent>
         <SidebarFooter>
             <SidebarMenu>
+                {!profile?.isPremium && (
+                 <SidebarMenuItem>
+                    <SidebarMenuButton asChild isActive={pathname === '/subscription'}>
+                        <Link href="/subscription">
+                            <Gem />
+                            Go Premium
+                        </Link>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
+                )}
                 <SidebarMenuItem>
                     <SidebarMenuButton asChild isActive={pathname === '/about'}>
                         <Link href="/about">
