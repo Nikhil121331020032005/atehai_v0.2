@@ -31,7 +31,7 @@ const formSchema = z.object({
   budgets: z.array(budgetSchema),
 });
 
-const budgetableCategories = CATEGORIES.filter(c => c.name !== 'Lending' && c.name !== 'EMI');
+const budgetableCategories = CATEGORIES;
 
 export function BudgetClient() {
   const { budgets: contextBudgets, updateBudgets, isLoading, currency } = useAppContext();

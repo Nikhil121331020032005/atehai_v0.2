@@ -15,7 +15,7 @@ export default function BudgetsPage() {
   );
 }
 
-const budgetableCategories = CATEGORIES.filter(c => c.name !== 'Lending' && c.name !== 'EMI');
+const budgetableCategories = CATEGORIES;
 
 function BudgetSkeleton() {
   return (
