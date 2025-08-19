@@ -32,9 +32,6 @@ export default function AboutPage() {
             </CardContent>
         </Card>
 
-        {/* AdSense Ad Unit Placeholder */}
-        <div className="w-full min-h-[250px]"></div>
-
         <Card className="bg-card shadow-lg border-none">
             <CardHeader className="items-center text-center">
                  <div className="p-3 bg-secondary rounded-full">

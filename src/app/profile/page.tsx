@@ -204,9 +204,6 @@ export default function ProfilePage() {
                     </CardContent>
                 </Card>
                 
-                {/* AdSense Ad Unit Placeholder */}
-                <div className="w-full min-h-[250px]"></div>
-
                  <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-destructive">

@@ -17,9 +17,6 @@ export default function DashboardPage() {
             </AlertDescription>
         </Alert>
 
-        {/* AdSense Ad Unit Placeholder */}
-        <div className="w-full min-h-[250px]"></div>
-
         <DashboardClient />
       </div>
     </AppLayout>
