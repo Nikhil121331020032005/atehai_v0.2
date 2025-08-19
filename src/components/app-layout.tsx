@@ -17,7 +17,7 @@ import {
   SidebarInset,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { Home, PlusCircle, Wallet, ArrowLeftRight, Landmark, CalendarClock, Target, User, Info, Gem } from 'lucide-react';
+import { Home, PlusCircle, Wallet, ArrowLeftRight, Landmark, CalendarClock, Target, User, Info, Gem, Plus } from 'lucide-react';
 import { Logo } from '@/components/logo';
 import { AddExpenseDialog } from '@/components/add-expense-dialog';
 import { CurrencySelector } from './currency-selector';
@@ -139,6 +139,15 @@ export default function AppLayout({ children, pageTitle }: { children: React.Rea
           {children}
           <AddExpenseDialog isOpen={isDialogOpen} onOpenChange={setIsDialogOpen} />
         </main>
+         {/* Floating Action Button for Mobile */}
+        <Button
+            className="md:hidden fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg"
+            size="icon"
+            onClick={() => setIsDialogOpen(true)}
+        >
+            <Plus className="h-6 w-6" />
+            <span className="sr-only">Add Expense</span>
+        </Button>
       </SidebarInset>
     </SidebarProvider>
   );
