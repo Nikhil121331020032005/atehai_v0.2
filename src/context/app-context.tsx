@@ -157,7 +157,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       unsubscribes.current.forEach(unsub => unsub());
       unsubscribes.current = [];
     };
-  }, [user]);
+  }, [user, clearState]);
 
   const requireAuth = (action: Function) => {
     return (...args: any[]) => {

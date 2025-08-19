@@ -70,15 +70,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (isLoading) return;
     
-    // Allow access to about and subscription page for both logged-in and logged-out users
-    if (['/about', '/subscription'].includes(pathname)) return;
-
     const isPublicRoute = publicRoutes.includes(pathname);
 
     if (user && isPublicRoute) {
       router.push('/');
-    } else if (!user && !isPublicRoute) {
-      router.push('/login');
     }
   }, [user, isLoading, pathname, router]);
 
@@ -101,6 +96,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const value = { user, isLoading, login, signup, logout, sendPasswordResetEmail: handleSendPasswordResetEmail };
 
+  // Show a global loading state only for the very initial load.
+  // Once isLoading is false, we render the children, which will either show
+  // the public content or the user-specific content.
   if (isLoading) {
     return (
       <div className="flex h-screen w-screen items-center justify-center">
