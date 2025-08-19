@@ -58,12 +58,14 @@ export function BorrowLendClient() {
                       <CardDescription>Total outstanding: {formatCurrency(totalBorrowed, currency)}</CardDescription>
                   </CardHeader>
                   <CardContent>
-                      <TransactionTable 
-                        items={borrowed} 
-                        currency={currency} 
-                        onStatusChange={updateBorrowLendStatus} 
-                        onDelete={deleteBorrowLend}
-                      />
+                    <div className="overflow-x-auto">
+                        <TransactionTable 
+                            items={borrowed} 
+                            currency={currency} 
+                            onStatusChange={updateBorrowLendStatus} 
+                            onDelete={deleteBorrowLend}
+                        />
+                    </div>
                   </CardContent>
               </Card>
           </div>
@@ -75,12 +77,14 @@ export function BorrowLendClient() {
                       <CardDescription>Total pending: {formatCurrency(totalLent, currency)}</CardDescription>
                   </CardHeader>
                   <CardContent>
-                      <TransactionTable 
-                        items={lent} 
-                        currency={currency} 
-                        onStatusChange={updateBorrowLendStatus}
-                        onDelete={deleteBorrowLend}
-                      />
+                    <div className="overflow-x-auto">
+                        <TransactionTable 
+                            items={lent} 
+                            currency={currency} 
+                            onStatusChange={updateBorrowLendStatus}
+                            onDelete={deleteBorrowLend}
+                        />
+                    </div>
                   </CardContent>
               </Card>
           </div>
@@ -99,7 +103,7 @@ interface TransactionTableProps {
 
 function TransactionTable({ items, currency, onStatusChange, onDelete }: TransactionTableProps) {
   return (
-      <Table>
+      <Table className="min-w-[600px]">
           <TableHeader>
               <TableRow>
                   <TableHead>Person</TableHead>

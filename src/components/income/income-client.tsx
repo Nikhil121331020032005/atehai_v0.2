@@ -53,66 +53,68 @@ export function IncomeClient() {
           <CardDescription>A log of your earnings from various sources.</CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Source</TableHead>
-                <TableHead>Bank/Client</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Amount</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {income.length > 0 ? (
-                income.map(item => (
-                  <TableRow key={item.id}>
-                    <TableCell className="font-medium">{item.source}</TableCell>
-                    <TableCell>{item.bank}</TableCell>
-                    <TableCell>{format(parseISO(item.date), 'PPP')}</TableCell>
-                    <TableCell>
-                      <Badge 
-                        variant={item.status === 'Received' ? 'secondary' : 'outline'}
-                        className="cursor-pointer"
-                        onClick={() => handleStatusChange(item.id, item.status)}
-                      >
-                        {item.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">{formatCurrency(item.amount, currency)}</TableCell>
-                    <TableCell className="text-right">
-                        <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                This action cannot be undone. This will permanently delete this income record.
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => deleteIncome(item.id)}>Delete</AlertDialogAction>
-                            </AlertDialogFooter>
-                            </AlertDialogContent>
-                        </AlertDialog>
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center h-24">
-                    No income recorded yet.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+            <div className="overflow-x-auto">
+                <Table className="min-w-[650px]">
+                    <TableHeader>
+                    <TableRow>
+                        <TableHead>Source</TableHead>
+                        <TableHead>Bank/Client</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Amount</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                    {income.length > 0 ? (
+                        income.map(item => (
+                        <TableRow key={item.id}>
+                            <TableCell className="font-medium">{item.source}</TableCell>
+                            <TableCell>{item.bank}</TableCell>
+                            <TableCell>{format(parseISO(item.date), 'PPP')}</TableCell>
+                            <TableCell>
+                            <Badge 
+                                variant={item.status === 'Received' ? 'secondary' : 'outline'}
+                                className="cursor-pointer"
+                                onClick={() => handleStatusChange(item.id, item.status)}
+                            >
+                                {item.status}
+                            </Badge>
+                            </TableCell>
+                            <TableCell className="text-right">{formatCurrency(item.amount, currency)}</TableCell>
+                            <TableCell className="text-right">
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                    <Button variant="ghost" size="icon">
+                                        <Trash2 className="h-4 w-4 text-destructive" />
+                                    </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                        This action cannot be undone. This will permanently delete this income record.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction onClick={() => deleteIncome(item.id)}>Delete</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            </TableCell>
+                        </TableRow>
+                        ))
+                    ) : (
+                        <TableRow>
+                        <TableCell colSpan={6} className="text-center h-24">
+                            No income recorded yet.
+                        </TableCell>
+                        </TableRow>
+                    )}
+                    </TableBody>
+                </Table>
+            </div>
         </CardContent>
       </Card>
       <AddIncomeDialog isOpen={isDialogOpen} onOpenChange={setIsDialogOpen} />
