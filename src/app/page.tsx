@@ -12,7 +12,7 @@ export default function DashboardPage() {
       <div className="space-y-6">
         <Alert className="border-primary/50 text-primary">
             <Gem className="h-4 w-4" />
-            <AlertTitle className="font-semibold">Welcome to Verde Budget!</AlertTitle>
+            <AlertTitle className="font-semibold">Welcome to Atehai!</AlertTitle>
             <AlertDescription>
               This is your financial dashboard. Add expenses to get started.
             </AlertDescription>

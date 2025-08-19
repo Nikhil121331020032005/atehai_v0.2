@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 
 export default function AboutPage() {
   return (
-    <AppLayout pageTitle="About Verde Budget">
+    <AppLayout pageTitle="About Atehai">
       <div className="max-w-3xl mx-auto space-y-8 py-8 px-4">
         
         <div className="text-center space-y-4">
@@ -29,7 +29,7 @@ export default function AboutPage() {
             </CardHeader>
             <CardContent>
                 <p className="text-center text-muted-foreground">
-                    Verde Budget is in its very early stages. As a new business, your feedback is the most valuable asset we have. Every suggestion, bug report, and idea helps us build a better product for you. We are committed to growing with our community and creating a tool that truly makes a difference in your financial life.
+                    Atehai is in its very early stages. As a new business, your feedback is the most valuable asset we have. Every suggestion, bug report, and idea helps us build a better product for you. We are committed to growing with our community and creating a tool that truly makes a difference in your financial life.
                 </p>
             </CardContent>
         </Card>
@@ -47,11 +47,11 @@ export default function AboutPage() {
                     Have a question, a feature request, or any concerns? Please don't hesitate to reach out. We read every email and are eager to hear from you.
                 </p>
                 <Button asChild>
-                    <Link href="mailto:support@verdebudget.com">
+                    <Link href="mailto:support@atehai.com">
                         <Mail className="mr-2 h-4 w-4" /> Contact Support
                     </Link>
                 </Button>
-                <p className="text-xs text-muted-foreground pt-2">Contact Email: support@verdebudget.com</p>
+                <p className="text-xs text-muted-foreground pt-2">Contact Email: support@atehai.com</p>
             </CardContent>
         </Card>
       </div>

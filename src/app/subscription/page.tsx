@@ -62,7 +62,7 @@ export default function SubscriptionPage() {
                         </div>
                         <CardTitle className="text-3xl">Unlock Premium Features</CardTitle>
                         <CardDescription className="text-primary-foreground/80 text-lg">
-                           Take full control of your finances with a Verde Budget Premium membership.
+                           Take full control of your finances with an Atehai Premium membership.
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="p-8">

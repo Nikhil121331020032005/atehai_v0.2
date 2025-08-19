@@ -7,7 +7,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 
 export const metadata: Metadata = {
-  title: "Verde Budget",
+  title: "Atehai",
   description: "A comprehensive budgeting and expense tracking app.",
 };
 

@@ -1,4 +1,4 @@
-# **App Name**: Verde Budget
+# **App Name**: Atehai
 
 ## Core Features:
 

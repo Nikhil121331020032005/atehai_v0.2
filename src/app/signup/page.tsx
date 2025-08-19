@@ -73,7 +73,7 @@ export default function SignupPage() {
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle className="text-2xl">Create an Account</CardTitle>
-          <CardDescription>Join Verde Budget to manage your finances.</CardDescription>
+          <CardDescription>Join Atehai to manage your finances.</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
