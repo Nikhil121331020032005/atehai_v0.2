@@ -1,4 +1,6 @@
 
+'use client';
+
 import AppLayout from "@/components/app-layout";
 import { GoalsClient } from "@/components/goals/goals-client";
 import { Suspense } from "react";
@@ -29,5 +31,3 @@ function PageSkeleton() {
       </div>
     )
   }
-
-    

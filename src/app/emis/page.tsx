@@ -1,4 +1,6 @@
 
+'use client';
+
 import AppLayout from "@/components/app-layout";
 import { EmiClient } from "@/components/emis/emi-client";
 import { Suspense } from "react";
@@ -29,5 +31,3 @@ function PageSkeleton() {
       </div>
     )
   }
-
-    

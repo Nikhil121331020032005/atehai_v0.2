@@ -1,4 +1,6 @@
 
+'use client';
+
 import AppLayout from "@/components/app-layout";
 import { BudgetClient } from "@/components/budgets/budget-client";
 import { Suspense } from "react";
@@ -32,5 +34,3 @@ function BudgetSkeleton() {
     </div>
   )
 }
-
-    

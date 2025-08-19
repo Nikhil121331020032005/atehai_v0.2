@@ -1,4 +1,6 @@
 
+'use client';
+
 import AppLayout from "@/components/app-layout";
 import { IncomeClient } from "@/components/income/income-client";
 import { Suspense } from "react";
@@ -25,5 +27,3 @@ function PageSkeleton() {
       </div>
     )
   }
-
-    

@@ -1,4 +1,6 @@
 
+'use client';
+
 import AppLayout from "@/components/app-layout";
 import { BorrowLendClient } from "@/components/borrow-lend/borrow-lend-client";
 import { Suspense } from "react";
@@ -27,5 +29,3 @@ function PageSkeleton() {
       </div>
     )
   }
-
-    
