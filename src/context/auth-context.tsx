@@ -23,7 +23,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const publicRoutes = ['/login', '/signup'];
 
 const createInitialUserData = async (user: User) => {
-    if (!db) return; // Do not proceed if firebase is not initialized
+    if (!db) return; 
     const userDocRef = doc(db, 'users', user.uid);
     const userDoc = await getDoc(userDocRef);
 
@@ -39,7 +39,6 @@ const createInitialUserData = async (user: User) => {
         });
 
         const budgetsColRef = collection(userDocRef, 'budgets');
-        // Create budgets with 0 amount for new users
         CATEGORIES.forEach(category => {
             const newBudgetRef = doc(budgetsColRef);
             batch.set(newBudgetRef, { category: category.name, amount: 0 });

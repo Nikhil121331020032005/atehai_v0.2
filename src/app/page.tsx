@@ -1,4 +1,6 @@
 
+'use client';
+
 import AppLayout from "@/components/app-layout";
 import DashboardClient from "@/components/dashboard/dashboard-client";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -10,9 +12,9 @@ export default function DashboardPage() {
       <div className="space-y-6">
         <Alert className="border-primary/50 text-primary">
             <Gem className="h-4 w-4" />
-            <AlertTitle className="font-semibold">Welcome, Early Adopter!</AlertTitle>
+            <AlertTitle className="font-semibold">Welcome to Verde Budget!</AlertTitle>
             <AlertDescription>
-              As a thank you for joining us early, you have complimentary access to all premium features. Enjoy!
+              This is your financial dashboard. Add expenses to get started.
             </AlertDescription>
         </Alert>
 
