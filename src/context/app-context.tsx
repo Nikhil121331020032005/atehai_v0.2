@@ -89,17 +89,17 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   
   const setupGuestData = () => {
     clearState();
-    setExpenses(MOCK_EXPENSES);
-    setBudgets(MOCK_BUDGETS as any);
-    setProfile({ email: '', isPremium: true });
+    setProfile({ email: '', isPremium: true }); // Guest users get premium features to explore
     setIsLoading(false);
   }
 
   useEffect(() => {
     // If user logs out, clear all subscriptions and reset state
     if (!user) {
-      unsubscribes.current.forEach(unsub => unsub());
-      unsubscribes.current = [];
+      if (unsubscribes.current.length > 0) {
+        unsubscribes.current.forEach(unsub => unsub());
+        unsubscribes.current = [];
+      }
       setupGuestData();
       return;
     }
@@ -167,7 +167,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
           description: "Please log in or sign up to perform this action.",
         });
         router.push('/login');
-        return Promise.resolve();
+        return Promise.resolve(); // Return a resolved promise to prevent further action
       }
       return action(...args);
     };
@@ -390,3 +390,5 @@ export function useAppContext() {
   }
   return context;
 }
+
+    
