@@ -54,6 +54,7 @@ interface AppContextType {
   updateIncomeStatus: (id: string, status: IncomeStatus) => Promise<void>;
   updateProfile: (data: Partial<Omit<Profile, 'email'>>, newAvatar?: File | null) => Promise<void>;
   resetMonthlyData: () => Promise<void>;
+  upgradeToPremium: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -143,8 +144,6 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
           isPremium: true, // Everyone is premium for now
           resetsThisMonth: data.resetsThisMonth || 0,
           subscriptionEndDate: data.subscriptionEndDate,
-          stripeCustomerId: data.stripeCustomerId,
-          stripeSubscriptionId: data.stripeSubscriptionId,
         })
       }
       setIsLoading(false); // Set loading to false after profile is fetched
@@ -168,7 +167,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
           description: "Please log in or sign up to perform this action.",
         });
         router.push('/login');
-        return Promise.reject(new Error("User not authenticated"));
+        return Promise.resolve();
       }
       return action(...args);
     };
@@ -340,6 +339,12 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
 
     await batch.commit();
   });
+  
+  const upgradeToPremium = requireAuth(async () => {
+    const userDocRef = doc(db, 'users', user!.uid);
+    await updateDoc(userDocRef, { isPremium: true });
+    toast({ title: "Success", description: "You are now a premium user." });
+  });
 
 
   return (
@@ -371,6 +376,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       updateIncomeStatus,
       updateProfile,
       resetMonthlyData,
+      upgradeToPremium,
     }}>
       {children}
     </AppContext.Provider>
