@@ -2,7 +2,6 @@
 import AppLayout from "@/components/app-layout";
 import DashboardClient from "@/components/dashboard/dashboard-client";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Card, CardContent } from "@/components/ui/card";
 import { Gem } from "lucide-react";
 
 export default function DashboardPage() {
