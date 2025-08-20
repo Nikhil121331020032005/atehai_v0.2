@@ -18,8 +18,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        body: ['"PT Sans"', 'sans-serif'],
-        headline: ['"PT Sans"', 'sans-serif'],
+        body: ['Inter', 'Roboto', '"PT Sans"', 'system-ui', '-apple-system', 'sans-serif'],
+        headline: ['Inter', 'Roboto', '"PT Sans"', 'system-ui', '-apple-system', 'sans-serif'],
         code: ['monospace'],
       },
       colors: {
