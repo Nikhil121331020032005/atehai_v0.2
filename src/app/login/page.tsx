@@ -88,7 +88,7 @@ export default function LoginPage() {
       await sendPasswordResetEmail(values.email);
       toast({
         title: 'Password Reset Email Sent',
-        description: 'Please check your inbox for instructions to reset your password.',
+        description: 'Please check your inbox for instructions to reset your password. If you don\'t find the email in your inbox, please check your spam folder.',
       });
       setIsForgotPasswordOpen(false);
       forgotPasswordForm.reset();

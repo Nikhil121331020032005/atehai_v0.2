@@ -7,11 +7,18 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatCurrency(amount: number, currency: Currency = 'USD') {
-  let locale = 'en-US';
-  if (currency === 'INR') locale = 'en-IN';
+  // Use a specific locale that properly displays INR symbol
+  const locale = currency === 'INR' ? 'hi-IN' : 'en-US';
   
-  return new Intl.NumberFormat(locale, {
+  const formatted = new Intl.NumberFormat(locale, {
     style: 'currency',
     currency: currency,
   }).format(amount);
+  
+  // Ensure INR shows ₹ symbol correctly
+  if (currency === 'INR' && !formatted.includes('₹')) {
+    return `₹${amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }
+  
+  return formatted;
 }
