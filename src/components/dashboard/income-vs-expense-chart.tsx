@@ -74,6 +74,7 @@ export function IncomeVsExpenseChart({ expenses, income }: ChartProps) {
                   backgroundColor: 'hsl(var(--background))',
                   border: '1px solid hsl(var(--border))',
                   borderRadius: 'var(--radius)',
+                  color: 'hsl(var(--foreground))',
                 }}
                 formatter={(value: number, name: string) => [formatCurrency(value, currency), name.charAt(0).toUpperCase() + name.slice(1)]}
               />

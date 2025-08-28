@@ -1,11 +1,17 @@
 'use client';
 
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { CalendarIcon, Search, X } from 'lucide-react';
 import type { Expense } from '@/lib/types';
 import { formatCurrency } from '@/lib/utils';
 import { CategoryIcon } from '@/components/icons';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAppContext } from '@/context/app-context';
+import { format, parseISO, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 
 type RecentExpensesProps = {
   expenses: Expense[];
@@ -13,34 +19,119 @@ type RecentExpensesProps = {
 
 export function RecentExpenses({ expenses }: RecentExpensesProps) {
   const { currency } = useAppContext();
-  const recentExpenses = expenses.slice(0, 10);
+  const [searchStartDate, setSearchStartDate] = useState('');
+  const [searchEndDate, setSearchEndDate] = useState('');
+  const [isSearchActive, setIsSearchActive] = useState(false);
+
+  const filteredExpenses = isSearchActive && (searchStartDate || searchEndDate)
+    ? expenses.filter(expense => {
+        const expenseDate = parseISO(expense.date);
+        const start = searchStartDate ? startOfDay(parseISO(searchStartDate)) : null;
+        const end = searchEndDate ? endOfDay(parseISO(searchEndDate)) : null;
+        
+        if (start && end) {
+          return isWithinInterval(expenseDate, { start, end });
+        } else if (start) {
+          return expenseDate >= start;
+        } else if (end) {
+          return expenseDate <= end;
+        }
+        return true;
+      })
+    : expenses.slice(0, 10);
+
+  const handleSearch = () => {
+    setIsSearchActive(true);
+  };
+
+  const handleClearSearch = () => {
+    setSearchStartDate('');
+    setSearchEndDate('');
+    setIsSearchActive(false);
+  };
 
   return (
     <Card className="h-full">
       <CardHeader>
-        <CardTitle>Recent Transactions</CardTitle>
-        <CardDescription>Your last 10 expenses.</CardDescription>
+        <CardTitle>
+          {isSearchActive ? 'Filtered Expenses' : 'Recent Transactions'}
+        </CardTitle>
+        <CardDescription>
+          {isSearchActive 
+            ? `Found ${filteredExpenses.length} expense${filteredExpenses.length !== 1 ? 's' : ''}`
+            : 'Your last 10 expenses.'
+          }
+        </CardDescription>
+        <div className="space-y-3 pt-2">
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1">
+              <Label htmlFor="start-date" className="text-xs">From Date</Label>
+              <Input
+                id="start-date"
+                type="date"
+                value={searchStartDate}
+                onChange={(e) => setSearchStartDate(e.target.value)}
+                className="h-8 text-xs"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="end-date" className="text-xs">To Date</Label>
+              <Input
+                id="end-date"
+                type="date"
+                value={searchEndDate}
+                onChange={(e) => setSearchEndDate(e.target.value)}
+                className="h-8 text-xs"
+              />
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button 
+              onClick={handleSearch} 
+              size="sm" 
+              className="flex-1 h-8"
+              disabled={!searchStartDate && !searchEndDate}
+            >
+              <Search className="h-3 w-3 mr-1" />
+              Search
+            </Button>
+            {isSearchActive && (
+              <Button 
+                onClick={handleClearSearch} 
+                variant="outline" 
+                size="sm" 
+                className="h-8"
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            )}
+          </div>
+        </div>
       </CardHeader>
       <CardContent>
-        <ScrollArea className="h-[350px]">
-          {recentExpenses.length > 0 ? (
+        <ScrollArea className="h-[300px]">
+          {filteredExpenses.length > 0 ? (
             <div className="space-y-4">
-              {recentExpenses.map(expense => (
+              {filteredExpenses.map(expense => (
                 <div key={expense.id} className="flex items-center gap-4">
                   <div className="p-3 bg-muted rounded-full">
                     <CategoryIcon name={expense.category} className="h-5 w-5 text-muted-foreground" />
                   </div>
                   <div className="flex-1 space-y-1">
                     <p className="text-sm font-medium leading-none truncate">{expense.description}</p>
-                    <p className="text-xs text-muted-foreground">{expense.category}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {expense.category} • {format(parseISO(expense.date), 'MMM dd, yyyy')}
+                    </p>
                   </div>
                   <div className="font-medium text-right">{formatCurrency(expense.amount, currency)}</div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="flex h-[350px] items-center justify-center">
-              <p className="text-muted-foreground">No recent expenses.</p>
+            <div className="flex h-[300px] items-center justify-center">
+              <p className="text-muted-foreground">
+                {isSearchActive ? 'No expenses found for the selected date range.' : 'No recent expenses.'}
+              </p>
             </div>
           )}
         </ScrollArea>
