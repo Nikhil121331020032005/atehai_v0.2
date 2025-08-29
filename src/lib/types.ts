@@ -95,3 +95,37 @@ export type Profile = {
     stripeCustomerId?: string;
     stripeSubscriptionId?: string;
 };
+
+export type AssetType = 'stocks' | 'crypto' | 'real-estate' | 'gold' | 'mutual-funds' | 'savings' | 'other';
+export type LiabilityType = 'home-loan' | 'car-loan' | 'personal-loan' | 'credit-card' | 'other';
+
+export type Asset = {
+  id: string;
+  name: string;
+  type: AssetType;
+  currentValue: number;
+  purchaseValue?: number;
+  purchaseDate?: string;
+  description?: string;
+};
+
+export type Liability = {
+  id: string;
+  name: string;
+  type: LiabilityType;
+  currentBalance: number;
+  originalAmount?: number;
+  interestRate?: number;
+  dueDate?: string;
+  description?: string;
+};
+
+export type DashboardWidget = {
+  id: string;
+  type: 'expenses' | 'savings' | 'debts' | 'emis' | 'income' | 'goals' | 'net-worth' | 'spending-chart';
+  title: string;
+  position: { x: number; y: number; w: number; h: number };
+  isVisible: boolean;
+};
+
+export type TimeRange = 'weekly' | 'monthly' | 'yearly';

@@ -1,4 +1,5 @@
 import type { Category, Expense, Budget, CategoryName, BorrowLend, Emi, Income, EmiCategory, IncomeSource, Goal } from './types';
+import type { Asset, Liability, DashboardWidget } from './types';
 import {
   ShoppingCart,
   Zap,
@@ -91,4 +92,43 @@ export const MOCK_GOALS: Goal[] = [
     { id: 'goal1', name: 'Vacation to Hawaii', targetAmount: 5000, currentAmount: 1200, deadline: format(addMonths(new Date(), 12), 'yyyy-MM-dd') },
     { id: 'goal2', name: 'New Laptop', targetAmount: 2000, currentAmount: 1800, deadline: format(addMonths(new Date(), 2), 'yyyy-MM-dd') },
     { id: 'goal3', name: 'Emergency Fund', targetAmount: 10000, currentAmount: 7500, deadline: format(addMonths(new Date(), 24), 'yyyy-MM-dd') },
+];
+
+export const ASSET_TYPES = [
+  { value: 'stocks', label: 'Stocks' },
+  { value: 'crypto', label: 'Cryptocurrency' },
+  { value: 'real-estate', label: 'Real Estate' },
+  { value: 'gold', label: 'Gold' },
+  { value: 'mutual-funds', label: 'Mutual Funds' },
+  { value: 'savings', label: 'Savings Account' },
+  { value: 'other', label: 'Other' },
+] as const;
+
+export const LIABILITY_TYPES = [
+  { value: 'home-loan', label: 'Home Loan' },
+  { value: 'car-loan', label: 'Car Loan' },
+  { value: 'personal-loan', label: 'Personal Loan' },
+  { value: 'credit-card', label: 'Credit Card' },
+  { value: 'other', label: 'Other' },
+] as const;
+
+export const MOCK_ASSETS: Asset[] = [
+  { id: 'asset1', name: 'Apple Stock', type: 'stocks', currentValue: 15000, purchaseValue: 12000, purchaseDate: '2024-01-15' },
+  { id: 'asset2', name: 'Bitcoin', type: 'crypto', currentValue: 8500, purchaseValue: 7000, purchaseDate: '2024-03-10' },
+  { id: 'asset3', name: 'Apartment', type: 'real-estate', currentValue: 250000, purchaseValue: 220000, purchaseDate: '2023-06-01' },
+  { id: 'asset4', name: 'Emergency Fund', type: 'savings', currentValue: 10000 },
+];
+
+export const MOCK_LIABILITIES: Liability[] = [
+  { id: 'liability1', name: 'Home Mortgage', type: 'home-loan', currentBalance: 180000, originalAmount: 200000, interestRate: 3.5 },
+  { id: 'liability2', name: 'Car Loan', type: 'car-loan', currentBalance: 15000, originalAmount: 25000, interestRate: 4.2 },
+  { id: 'liability3', name: 'Credit Card', type: 'credit-card', currentBalance: 2500, interestRate: 18.9 },
+];
+
+export const DEFAULT_WIDGETS: DashboardWidget[] = [
+  { id: 'expenses', type: 'expenses', title: 'Recent Expenses', position: { x: 0, y: 0, w: 6, h: 4 }, isVisible: true },
+  { id: 'spending-chart', type: 'spending-chart', title: 'Spending by Category', position: { x: 6, y: 0, w: 6, h: 4 }, isVisible: true },
+  { id: 'net-worth', type: 'net-worth', title: 'Net Worth Overview', position: { x: 0, y: 4, w: 12, h: 3 }, isVisible: true },
+  { id: 'goals', type: 'goals', title: 'Financial Goals', position: { x: 0, y: 7, w: 6, h: 4 }, isVisible: true },
+  { id: 'emis', type: 'emis', title: 'EMI Overview', position: { x: 6, y: 7, w: 6, h: 4 }, isVisible: true },
 ];

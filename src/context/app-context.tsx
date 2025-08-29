@@ -3,6 +3,7 @@
 
 import { createContext, useContext, useState, useEffect, type ReactNode, useCallback, useRef } from 'react';
 import type { Expense, Budget, Currency, BorrowLend, Emi, Income, Goal, IncomeStatus, Profile } from '@/lib/types';
+import type { Asset, Liability, DashboardWidget, TimeRange } from '@/lib/types';
 import { useAuth } from './auth-context';
 import { db, storage } from '@/lib/firebase';
 import { 
@@ -22,7 +23,7 @@ import {
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { format, startOfMonth, isSameMonth, parseISO, addMonths } from 'date-fns';
-import { MOCK_BUDGETS, MOCK_EXPENSES, MOCK_BORROW_LEND, MOCK_EMIS, MOCK_INCOME, MOCK_GOALS } from '@/lib/data';
+import { MOCK_BUDGETS, MOCK_EXPENSES, MOCK_BORROW_LEND, MOCK_EMIS, MOCK_INCOME, MOCK_GOALS, MOCK_ASSETS, MOCK_LIABILITIES, DEFAULT_WIDGETS } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 
@@ -33,6 +34,9 @@ interface AppContextType {
   emis: Emi[];
   income: Income[];
   goals: Goal[];
+  assets: Asset[];
+  liabilities: Liability[];
+  dashboardWidgets: DashboardWidget[];
   profile: Profile | null;
   currency: Currency;
   addExpense: (expense: Omit<Expense, 'id'>) => Promise<void>;
@@ -52,6 +56,13 @@ interface AppContextType {
   updateGoal: (id: string, updates: Partial<Goal>) => Promise<void>;
   deleteGoal: (id: string) => Promise<void>;
   updateIncomeStatus: (id: string, status: IncomeStatus) => Promise<void>;
+  addAsset: (asset: Omit<Asset, 'id'>) => Promise<void>;
+  updateAsset: (id: string, updates: Partial<Asset>) => Promise<void>;
+  deleteAsset: (id: string) => Promise<void>;
+  addLiability: (liability: Omit<Liability, 'id'>) => Promise<void>;
+  updateLiability: (id: string, updates: Partial<Liability>) => Promise<void>;
+  deleteLiability: (id: string) => Promise<void>;
+  updateDashboardWidgets: (widgets: DashboardWidget[]) => Promise<void>;
   updateProfile: (data: Partial<Omit<Profile, 'email'>>, newAvatar?: File | null) => Promise<void>;
   resetMonthlyData: () => Promise<void>;
   upgradeToPremium: () => Promise<void>;
@@ -70,6 +81,9 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const [emis, setEmis] = useState<Emi[]>([]);
   const [income, setIncome] = useState<Income[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
+  const [assets, setAssets] = useState<Asset[]>([]);
+  const [liabilities, setLiabilities] = useState<Liability[]>([]);
+  const [dashboardWidgets, setDashboardWidgets] = useState<DashboardWidget[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [currency, setCurrency] = useState<Currency>('USD');
   const [isDataLoading, setIsDataLoading] = useState(true);
@@ -83,6 +97,9 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     setEmis([]);
     setIncome([]);
     setGoals([]);
+    setAssets([]);
+    setLiabilities([]);
+    setDashboardWidgets([]);
     setProfile(null);
     setCurrency('USD');
   }, []);
@@ -95,6 +112,9 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     setEmis(MOCK_EMIS);
     setIncome(MOCK_INCOME);
     setGoals(MOCK_GOALS);
+    setAssets(MOCK_ASSETS);
+    setLiabilities(MOCK_LIABILITIES);
+    setDashboardWidgets(DEFAULT_WIDGETS);
     setProfile({ email: '', isPremium: true });
     setIsDataLoading(false);
   }
@@ -120,7 +140,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
 
     setIsDataLoading(true);
 
-    const dataCollections = ['expenses', 'budgets', 'borrowLend', 'emis', 'income', 'goals'];
+    const dataCollections = ['expenses', 'budgets', 'borrowLend', 'emis', 'income', 'goals', 'assets', 'liabilities'];
     const setters:any = {
       expenses: setExpenses,
       budgets: setBudgets,
@@ -128,6 +148,8 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       emis: setEmis,
       income: setIncome,
       goals: setGoals,
+      assets: setAssets,
+      liabilities: setLiabilities,
     };
 
     const newUnsubscribes = dataCollections.map(col => {
@@ -151,7 +173,9 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
           isPremium: true,
           resetsThisMonth: data.resetsThisMonth || 0,
           subscriptionEndDate: data.subscriptionEndDate,
+          dashboardWidgets: data.dashboardWidgets || DEFAULT_WIDGETS,
         })
+        setDashboardWidgets(data.dashboardWidgets || DEFAULT_WIDGETS);
       }
       setIsDataLoading(false);
     });
@@ -310,6 +334,20 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const updateGoal = requireAuth(async (id: string, updates: Partial<Goal>) => updateDocForUser('goals', id, updates));
   const deleteGoal = requireAuth(async (id: string) => deleteDocForUser('goals', id));
 
+  const addAsset = requireAuth(async (asset: Omit<Asset, 'id'>) => addDocForUser('assets', asset));
+  const updateAsset = requireAuth(async (id: string, updates: Partial<Asset>) => updateDocForUser('assets', id, updates));
+  const deleteAsset = requireAuth(async (id: string) => deleteDocForUser('assets', id));
+
+  const addLiability = requireAuth(async (liability: Omit<Liability, 'id'>) => addDocForUser('liabilities', liability));
+  const updateLiability = requireAuth(async (id: string, updates: Partial<Liability>) => updateDocForUser('liabilities', id, updates));
+  const deleteLiability = requireAuth(async (id: string) => deleteDocForUser('liabilities', id));
+
+  const updateDashboardWidgets = requireAuth(async (widgets: DashboardWidget[]) => {
+    const userDocRef = doc(db!, 'users', user!.uid);
+    await updateDoc(userDocRef, { dashboardWidgets: widgets });
+    setDashboardWidgets(widgets);
+  });
+
   const resetMonthlyData = requireAuth(async () => {
     if (!profile) return;
     
@@ -325,7 +363,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     }
 
     const batch = writeBatch(db!);
-    const collectionsToDelete = ['expenses', 'income', 'borrowLend'];
+    const collectionsToDelete = ['expenses', 'income', 'borrowLend', 'assets', 'liabilities'];
 
     for (const collectionName of collectionsToDelete) {
       const colRef = collection(db!, 'users', user!.uid, collectionName);
@@ -360,6 +398,9 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       emis,
       income,
       goals,
+      assets,
+      liabilities,
+      dashboardWidgets,
       profile,
       currency,
       addExpense,
@@ -379,6 +420,13 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       updateGoal,
       deleteGoal,
       updateIncomeStatus,
+      addAsset,
+      updateAsset,
+      deleteAsset,
+      addLiability,
+      updateLiability,
+      deleteLiability,
+      updateDashboardWidgets,
       updateProfile,
       resetMonthlyData,
       upgradeToPremium,

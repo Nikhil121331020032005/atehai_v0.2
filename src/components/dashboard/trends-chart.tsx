@@ -1,0 +1,169 @@
+'use client';
+
+import { useMemo, useState } from 'react';
+import { Line, LineChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend } from 'recharts';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { formatCurrency } from '@/lib/utils';
+import { useAppContext } from '@/context/app-context';
+import type { Expense, Income, TimeRange } from '@/lib/types';
+import { 
+  format, 
+  parseISO, 
+  startOfWeek, 
+  endOfWeek, 
+  startOfMonth, 
+  endOfMonth, 
+  startOfYear, 
+  endOfYear,
+  eachDayOfInterval,
+  eachWeekOfInterval,
+  eachMonthOfInterval,
+  isWithinInterval
+} from 'date-fns';
+
+type TrendsChartProps = {
+  expenses: Expense[];
+  income: Income[];
+};
+
+export function TrendsChart({ expenses, income }: TrendsChartProps) {
+  const { currency } = useAppContext();
+  const [timeRange, setTimeRange] = useState<TimeRange>('monthly');
+
+  const data = useMemo(() => {
+    const now = new Date();
+    let intervals: Date[] = [];
+    let formatStr = '';
+
+    switch (timeRange) {
+      case 'weekly':
+        intervals = eachDayOfInterval({ 
+          start: startOfWeek(now), 
+          end: endOfWeek(now) 
+        });
+        formatStr = 'EEE';
+        break;
+      case 'monthly':
+        intervals = eachDayOfInterval({ 
+          start: startOfMonth(now), 
+          end: endOfMonth(now) 
+        });
+        formatStr = 'MMM dd';
+        break;
+      case 'yearly':
+        intervals = eachMonthOfInterval({ 
+          start: startOfYear(now), 
+          end: endOfYear(now) 
+        });
+        formatStr = 'MMM';
+        break;
+    }
+
+    return intervals.map(date => {
+      const dayExpenses = expenses
+        .filter(expense => {
+          const expenseDate = parseISO(expense.date);
+          return timeRange === 'yearly' 
+            ? format(expenseDate, 'yyyy-MM') === format(date, 'yyyy-MM')
+            : format(expenseDate, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd');
+        })
+        .reduce((sum, expense) => sum + expense.amount, 0);
+
+      const dayIncome = income
+        .filter(item => {
+          const incomeDate = parseISO(item.date);
+          return item.status === 'Received' && (
+            timeRange === 'yearly' 
+              ? format(incomeDate, 'yyyy-MM') === format(date, 'yyyy-MM')
+              : format(incomeDate, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd')
+          );
+        })
+        .reduce((sum, item) => sum + item.amount, 0);
+
+      return {
+        name: format(date, formatStr),
+        expenses: dayExpenses,
+        income: dayIncome,
+        netFlow: dayIncome - dayExpenses,
+      };
+    });
+  }, [expenses, income, timeRange]);
+
+  return (
+    <Card className="h-full">
+      <CardHeader>
+        <div className="flex justify-between items-center">
+          <CardTitle>Financial Trends</CardTitle>
+          <div className="flex gap-1">
+            {(['weekly', 'monthly', 'yearly'] as TimeRange[]).map(range => (
+              <Button
+                key={range}
+                variant={timeRange === range ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setTimeRange(range)}
+                className="capitalize"
+              >
+                {range}
+              </Button>
+            ))}
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <ResponsiveContainer width="100%" height={300}>
+          <LineChart data={data}>
+            <XAxis 
+              dataKey="name" 
+              stroke="#888888"
+              fontSize={12}
+              tickLine={false}
+              axisLine={false}
+            />
+            <YAxis
+              stroke="#888888"
+              fontSize={12}
+              tickLine={false}
+              axisLine={false}
+              tickFormatter={(value) => formatCurrency(value as number, currency).replace(/(\.00|,\d*)$/, '')}
+            />
+            <Tooltip
+              contentStyle={{
+                backgroundColor: 'hsl(var(--background))',
+                border: '1px solid hsl(var(--border))',
+                borderRadius: 'var(--radius)',
+                color: 'hsl(var(--foreground))',
+              }}
+              formatter={(value: number, name: string) => [
+                formatCurrency(value, currency), 
+                name.charAt(0).toUpperCase() + name.slice(1)
+              ]}
+            />
+            <Legend />
+            <Line 
+              type="monotone" 
+              dataKey="income" 
+              stroke="hsl(var(--chart-1))" 
+              strokeWidth={2}
+              dot={{ fill: 'hsl(var(--chart-1))' }}
+            />
+            <Line 
+              type="monotone" 
+              dataKey="expenses" 
+              stroke="hsl(var(--chart-2))" 
+              strokeWidth={2}
+              dot={{ fill: 'hsl(var(--chart-2))' }}
+            />
+            <Line 
+              type="monotone" 
+              dataKey="netFlow" 
+              stroke="hsl(var(--chart-3))" 
+              strokeWidth={2}
+              dot={{ fill: 'hsl(var(--chart-3))' }}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </CardContent>
+    </Card>
+  );
+}

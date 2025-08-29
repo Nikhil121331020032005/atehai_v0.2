@@ -2,7 +2,7 @@
 'use client';
 
 import AppLayout from "@/components/app-layout";
-import DashboardClient from "@/components/dashboard/dashboard-client";
+import { CustomizableDashboard } from "@/components/dashboard/customizable-dashboard";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Gem } from "lucide-react";
 
@@ -18,7 +18,7 @@ export default function DashboardPage() {
             </AlertDescription>
         </Alert>
 
-        <DashboardClient />
+        <CustomizableDashboard />
       </div>
     </AppLayout>
   );
