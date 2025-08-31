@@ -66,8 +66,8 @@ export function SpendingChart({ expenses }: SpendingChartProps) {
                 contentStyle={{
                   backgroundColor: 'hsl(var(--background))',
                   border: '1px solid hsl(var(--border))',
-                color: 'hsl(var(--foreground))',
                   borderRadius: 'var(--radius)',
+                  color: 'hsl(var(--foreground))',
                 }}
                 formatter={(value: number) => [formatCurrency(value, currency), 'Total Spent']}
               />

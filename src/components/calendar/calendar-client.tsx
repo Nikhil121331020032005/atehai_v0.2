@@ -67,9 +67,9 @@ export function CalendarClient() {
 
   const handleDateSelect = (date: Date | undefined) => {
     if (isRangeMode) {
-      if (!dateRange.from || (dateRange.from && dateRange.to)) {
+      if (!dateRange.from || (dateRange.from && dateRange.to) || !date) {
         setDateRange({ from: date, to: undefined });
-      } else if (date && date >= dateRange.from) {
+      } else if (date >= dateRange.from) {
         setDateRange({ from: dateRange.from, to: date });
       } else {
         setDateRange({ from: date, to: undefined });

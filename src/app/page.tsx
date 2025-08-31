@@ -4,12 +4,13 @@
 import AppLayout from "@/components/app-layout";
 import { SpendingChart } from "@/components/dashboard/spending-chart";
 import { RecentExpenses } from "@/components/dashboard/recent-expenses";
+import { BudgetOverview } from "@/components/dashboard/budget-overview";
 import { useAppContext } from "@/context/app-context";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Gem } from "lucide-react";
 
 export default function DashboardPage() {
-  const { expenses, isLoading } = useAppContext();
+  const { expenses, budgets, isLoading } = useAppContext();
 
   if (isLoading) {
     return (
@@ -22,6 +23,11 @@ export default function DashboardPage() {
               This is your financial dashboard. Add expenses to get started.
             </AlertDescription>
           </Alert>
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="h-32 bg-muted animate-pulse rounded-xl" />
+            <div className="h-32 bg-muted animate-pulse rounded-xl" />
+            <div className="h-32 bg-muted animate-pulse rounded-xl" />
+          </div>
           <div className="grid gap-8 lg:grid-cols-5">
             <div className="lg:col-span-3">
               <div className="h-96 bg-muted animate-pulse rounded-xl" />
@@ -46,6 +52,7 @@ export default function DashboardPage() {
             </AlertDescription>
         </Alert>
 
+        <BudgetOverview expenses={expenses} budgets={budgets} />
         <div className="grid gap-8 lg:grid-cols-5">
           <div className="lg:col-span-3">
             <SpendingChart expenses={expenses} />
