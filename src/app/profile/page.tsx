@@ -38,12 +38,14 @@ import Link from "next/link";
 
 export default function ProfilePage() {
     const { user, logout } = useAuth();
-    const { profile, isLoading, resetMonthlyData } = useAppContext();
+    const { profile, isLoading, resetMonthlyData, getArchivedData } = useAppContext();
     const router = useRouter();
     const { toast } = useToast();
     const [archivedMonths, setArchivedMonths] = useState<string[]>([]);
+    const [archivedData, setArchivedData] = useState<{[key: string]: any}>({});
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [isResetting, setIsResetting] = useState(false);
+    const [loadingArchivedData, setLoadingArchivedData] = useState<string | null>(null);
 
     useEffect(() => {
         if (user) {
@@ -79,6 +81,28 @@ export default function ProfilePage() {
         } finally {
             setIsResetting(false);
         }
+    }
+
+    const loadArchivedData = async (month: string) => {
+        if (archivedData[month]) return; // Already loaded
+        
+        setLoadingArchivedData(month);
+        try {
+            const data = await getArchivedData(month);
+            setArchivedData(prev => ({ ...prev, [month]: data }));
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Failed to load archived data.' });
+        } finally {
+            setLoadingArchivedData(null);
+        }
+    }
+
+    const getTotalExpenses = (expenses: any[]) => {
+        return expenses?.reduce((sum: number, expense: any) => sum + (expense.amount || 0), 0) || 0;
+    }
+
+    const getTotalIncome = (income: any[]) => {
+        return income?.reduce((sum: number, item: any) => sum + (item.amount || 0), 0) || 0;
     }
 
     if (isLoading || !profile) {
@@ -191,9 +215,57 @@ export default function ProfilePage() {
                             {archivedMonths.length > 0 ? (
                                 archivedMonths.map(month => (
                                     <AccordionItem key={month} value={month}>
-                                        <AccordionTrigger>{format(new Date(month + '-02'), 'MMMM yyyy')}</AccordionTrigger>
+                                        <AccordionTrigger 
+                                            onClick={() => loadArchivedData(month)}
+                                            className="hover:bg-muted/50"
+                                        >
+                                            {format(new Date(month + '-01'), 'MMMM yyyy')}
+                                            {loadingArchivedData === month && (
+                                                <span className="text-xs text-muted-foreground ml-2">Loading...</span>
+                                            )}
+                                        </AccordionTrigger>
                                         <AccordionContent>
-                                            Here you will be able to see a summary or download the report for {format(new Date(month + '-02'), 'MMMM yyyy')}.
+                                            {archivedData[month] ? (
+                                                <div className="space-y-4">
+                                                    <div className="grid grid-cols-2 gap-4">
+                                                        <div className="bg-muted/50 p-3 rounded-lg">
+                                                            <div className="text-sm font-medium text-muted-foreground">Total Expenses</div>
+                                                            <div className="text-lg font-semibold text-destructive">
+                                                                ₹{getTotalExpenses(archivedData[month].expenses).toLocaleString()}
+                                                            </div>
+                                                        </div>
+                                                        <div className="bg-muted/50 p-3 rounded-lg">
+                                                            <div className="text-sm font-medium text-muted-foreground">Total Income</div>
+                                                            <div className="text-lg font-semibold text-green-600">
+                                                                ₹{getTotalIncome(archivedData[month].income).toLocaleString()}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div className="space-y-2">
+                                                        <h4 className="font-medium">Summary</h4>
+                                                        <div className="text-sm space-y-1">
+                                                            <div>Expenses: {archivedData[month].expenses?.length || 0} transactions</div>
+                                                            <div>Income: {archivedData[month].income?.length || 0} transactions</div>
+                                                            <div>Borrow/Lend: {archivedData[month].borrowLend?.length || 0} records</div>
+                                                            <div>Assets: {archivedData[month].assets?.length || 0} items</div>
+                                                            <div>Liabilities: {archivedData[month].liabilities?.length || 0} items</div>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div className="pt-2 border-t">
+                                                        <p className="text-xs text-muted-foreground">
+                                                            Data archived on {format(new Date(month + '-01'), 'MMMM yyyy')}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="text-center py-4">
+                                                    <p className="text-sm text-muted-foreground">
+                                                        Click to load archived data for {format(new Date(month + '-01'), 'MMMM yyyy')}
+                                                    </p>
+                                                </div>
+                                            )}
                                         </AccordionContent>
                                     </AccordionItem>
                                 ))

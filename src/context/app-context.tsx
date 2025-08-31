@@ -17,12 +17,13 @@ import {
   query,
   writeBatch,
   getDocs,
+  getDoc,
   serverTimestamp,
   increment,
   where
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { format, startOfMonth, isSameMonth, parseISO, addMonths } from 'date-fns';
+import { format, startOfMonth, isSameMonth, parseISO, addMonths, isFirstDayOfMonth, subMonths } from 'date-fns';
 import { MOCK_BUDGETS, MOCK_EXPENSES, MOCK_BORROW_LEND, MOCK_EMIS, MOCK_INCOME, MOCK_GOALS, MOCK_ASSETS, MOCK_LIABILITIES, DEFAULT_WIDGETS } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
@@ -66,6 +67,8 @@ interface AppContextType {
   updateProfile: (data: Partial<Omit<Profile, 'email'>>, newAvatar?: File | null) => Promise<void>;
   resetMonthlyData: () => Promise<void>;
   upgradeToPremium: () => Promise<void>;
+  getArchivedData: (month: string) => Promise<any>;
+  performAutomaticMonthlyReset: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -382,11 +385,157 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
 
     await batch.commit();
   });
+
+  // Automatic monthly reset functionality
+  const performAutomaticMonthlyReset = requireAuth(async () => {
+    if (!user || !db) return;
+
+    const now = new Date();
+    const lastMonth = subMonths(now, 1);
+    const lastMonthKey = format(lastMonth, 'yyyy-MM');
+    
+    // Check if we've already processed this month
+    const userDocRef = doc(db, 'users', user.uid);
+    const archiveQuery = query(collection(db, 'users', user.uid, 'monthlyArchives'), where('month', '==', lastMonthKey));
+    const archiveSnapshot = await getDocs(archiveQuery);
+    
+    if (!archiveSnapshot.empty) {
+      return; // Already processed this month
+    }
+
+    // Check if there's any data to archive
+    let hasDataToArchive = false;
+    const collectionsToArchive = ['expenses', 'income', 'borrowLend', 'assets', 'liabilities'];
+    
+    for (const collectionName of collectionsToArchive) {
+      const colRef = collection(db, 'users', user.uid, collectionName);
+      const snapshot = await getDocs(colRef);
+      if (!snapshot.empty) {
+        hasDataToArchive = true;
+        break;
+      }
+    }
+
+    // If no data to archive, just reset the counter
+    if (!hasDataToArchive) {
+      await updateDoc(userDocRef, { resetsThisMonth: 0 });
+      return;
+    }
+
+    // Archive last month's data
+    const batch = writeBatch(db);
+    
+    for (const collectionName of collectionsToArchive) {
+      const colRef = collection(db, 'users', user.uid, collectionName);
+      const snapshot = await getDocs(colRef);
+      
+      if (!snapshot.empty) {
+        // Create archive entry
+        const archiveRef = doc(collection(db, 'users', user.uid, 'monthlyArchives'));
+        batch.set(archiveRef, {
+          month: lastMonthKey,
+          collection: collectionName,
+          data: snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })),
+          archivedAt: serverTimestamp(),
+        });
+        
+        // Delete current data
+        snapshot.docs.forEach(doc => batch.delete(doc.ref));
+      }
+    }
+
+    // Reset goals current amounts
+    const goalsColRef = collection(db, 'users', user.uid, 'goals');
+    const goalsSnapshot = await getDocs(goalsColRef);
+    goalsSnapshot.docs.forEach(doc => {
+      batch.update(doc.ref, { currentAmount: 0 });
+    });
+
+    // Reset the resetsThisMonth counter
+    batch.update(userDocRef, { resetsThisMonth: 0 });
+
+    await batch.commit();
+    
+    toast({
+      title: 'Monthly Reset Complete',
+      description: `Your ${format(lastMonth, 'MMMM yyyy')} data has been archived and current month data has been reset.`,
+    });
+  });
+
+  // Check for automatic monthly reset on app load and daily
+  useEffect(() => {
+    if (!user || !db) return;
+
+    const checkAndPerformMonthlyReset = async () => {
+      const now = new Date();
+      
+      // Check if it's the first day of the month
+      if (isFirstDayOfMonth(now)) {
+        // Check if we've already processed today
+        const userDocRef = doc(db, 'users', user.uid);
+        const userDocSnapshot = await getDoc(userDocRef);
+        const userData = userDocSnapshot.data();
+        const lastResetDate = userData?.lastAutomaticReset;
+        
+        if (lastResetDate) {
+          const lastReset = new Date(lastResetDate);
+          const today = new Date();
+          
+          // If we've already reset today, don't do it again
+          if (format(lastReset, 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd')) {
+            return;
+          }
+        }
+        
+        await performAutomaticMonthlyReset();
+        
+        // Update the last reset date
+        await updateDoc(userDocRef, { lastAutomaticReset: now.toISOString() });
+      }
+    };
+
+    // Check immediately on load
+    checkAndPerformMonthlyReset();
+
+    // Set up daily check at midnight
+    const now = new Date();
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(0, 0, 0, 0);
+    
+    const timeUntilMidnight = tomorrow.getTime() - now.getTime();
+    
+    const dailyCheck = setTimeout(() => {
+      checkAndPerformMonthlyReset();
+      
+      // Set up recurring daily check
+      const dailyInterval = setInterval(checkAndPerformMonthlyReset, 24 * 60 * 60 * 1000);
+      
+      return () => clearInterval(dailyInterval);
+    }, timeUntilMidnight);
+
+    return () => clearTimeout(dailyCheck);
+  }, [user, db, performAutomaticMonthlyReset]);
   
   const upgradeToPremium = requireAuth(async () => {
     const userDocRef = doc(db!, 'users', user!.uid);
     await updateDoc(userDocRef, { isPremium: true });
     toast({ title: "Success", description: "You are now a premium user." });
+  });
+
+  const getArchivedData = requireAuth(async (month: string) => {
+    if (!user || !db) return null;
+    
+    const archiveQuery = query(collection(db, 'users', user.uid, 'monthlyArchives'), where('month', '==', month));
+    const archiveSnapshot = await getDocs(archiveQuery);
+    
+    const archivedData: any = {};
+    archiveSnapshot.docs.forEach(doc => {
+      const data = doc.data();
+      archivedData[data.collection] = data.data || [];
+    });
+    
+    return archivedData;
   });
 
 
@@ -430,6 +579,8 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       updateProfile,
       resetMonthlyData,
       upgradeToPremium,
+      getArchivedData,
+      performAutomaticMonthlyReset,
     }}>
       {children}
     </AppContext.Provider>

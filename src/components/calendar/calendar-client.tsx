@@ -20,73 +20,145 @@ export function CalendarClient() {
     to: undefined,
   });
   const [isRangeMode, setIsRangeMode] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const expensesByDate = useMemo(() => {
-    const grouped: { [key: string]: Expense[] } = {};
-    expenses.forEach(expense => {
-      const dateKey = expense.date;
-      if (!grouped[dateKey]) {
-        grouped[dateKey] = [];
-      }
-      grouped[dateKey].push(expense);
-    });
-    return grouped;
+    try {
+      const grouped: { [key: string]: Expense[] } = {};
+      expenses.forEach(expense => {
+        const dateKey = expense.date;
+        if (!grouped[dateKey]) {
+          grouped[dateKey] = [];
+        }
+        grouped[dateKey].push(expense);
+      });
+      return grouped;
+    } catch (error) {
+      console.error('Error grouping expenses by date:', error);
+      return {};
+    }
   }, [expenses]);
 
   const selectedDateExpenses = useMemo(() => {
-    if (!selectedDate) return [];
-    const dateKey = format(selectedDate, 'yyyy-MM-dd');
-    return expensesByDate[dateKey] || [];
+    try {
+      if (!selectedDate) return [];
+      const dateKey = format(selectedDate, 'yyyy-MM-dd');
+      return expensesByDate[dateKey] || [];
+    } catch (error) {
+      console.error('Error getting selected date expenses:', error);
+      return [];
+    }
   }, [selectedDate, expensesByDate]);
 
   const rangeExpenses = useMemo(() => {
     if (!isRangeMode || !dateRange.from || !dateRange.to) return [];
     
-    return expenses.filter(expense => {
-      const expenseDate = parseISO(expense.date);
-      return isWithinInterval(expenseDate, {
-        start: startOfDay(dateRange.from!),
-        end: endOfDay(dateRange.to!),
+    try {
+      return expenses.filter(expense => {
+        const expenseDate = parseISO(expense.date);
+        return isWithinInterval(expenseDate, {
+          start: startOfDay(dateRange.from!),
+          end: endOfDay(dateRange.to!),
+        });
       });
-    });
+    } catch (error) {
+      console.error('Error filtering range expenses:', error);
+      return [];
+    }
   }, [isRangeMode, dateRange, expenses]);
 
   const rangeTotalAmount = useMemo(() => {
-    return rangeExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+    try {
+      return rangeExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+    } catch (error) {
+      console.error('Error calculating range total:', error);
+      return 0;
+    }
   }, [rangeExpenses]);
 
   const selectedDateTotal = useMemo(() => {
-    return selectedDateExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+    try {
+      return selectedDateExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+    } catch (error) {
+      console.error('Error calculating selected date total:', error);
+      return 0;
+    }
   }, [selectedDateExpenses]);
 
   const getDayExpenseTotal = (date: Date) => {
-    const dateKey = format(date, 'yyyy-MM-dd');
-    const dayExpenses = expensesByDate[dateKey] || [];
-    return dayExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+    try {
+      const dateKey = format(date, 'yyyy-MM-dd');
+      const dayExpenses = expensesByDate[dateKey] || [];
+      return dayExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+    } catch (error) {
+      console.error('Error calculating day expense total:', error);
+      return 0;
+    }
   };
 
   const handleDateSelect = (date: Date | undefined) => {
-    if (isRangeMode) {
-      if (!dateRange.from || (dateRange.from && dateRange.to) || !date) {
-        setDateRange({ from: date, to: undefined });
-      } else if (date >= dateRange.from) {
-        setDateRange({ from: dateRange.from, to: date });
+    try {
+      if (isRangeMode) {
+        if (!date) return; // Don't do anything if no date is selected
+        
+        if (!dateRange.from || (dateRange.from && dateRange.to)) {
+          // Start a new range
+          setDateRange({ from: date, to: undefined });
+        } else if (dateRange.from && !dateRange.to) {
+          // Complete the range
+          if (date >= dateRange.from) {
+            setDateRange({ from: dateRange.from, to: date });
+          } else {
+            // If end date is before start date, swap them
+            setDateRange({ from: date, to: dateRange.from });
+          }
+        }
       } else {
-        setDateRange({ from: date, to: undefined });
+        setSelectedDate(date);
       }
-    } else {
-      setSelectedDate(date);
+      setError(null);
+    } catch (error) {
+      console.error('Error handling date selection:', error);
+      setError('Failed to select date');
     }
   };
 
   const toggleMode = () => {
-    setIsRangeMode(!isRangeMode);
-    setDateRange({ from: undefined, to: undefined });
-    setSelectedDate(new Date());
+    try {
+      setIsRangeMode(!isRangeMode);
+      setDateRange({ from: undefined, to: undefined });
+      setSelectedDate(new Date());
+      setError(null);
+    } catch (error) {
+      console.error('Error toggling mode:', error);
+      setError('Failed to switch calendar mode');
+    }
   };
 
   if (isLoading) {
     return <div>Loading...</div>;
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center p-8">
+          <h2 className="text-2xl font-bold text-red-600 mb-4">Calendar Error</h2>
+          <p className="text-muted-foreground mb-4">{error}</p>
+          <Button 
+            onClick={() => {
+              setError(null);
+              setDateRange({ from: undefined, to: undefined });
+              setSelectedDate(new Date());
+              setIsRangeMode(false);
+            }}
+            variant="outline"
+          >
+            Reset Calendar
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -134,12 +206,23 @@ export function CalendarClient() {
             <Calendar
               mode={isRangeMode ? "range" : "single"}
               selected={isRangeMode ? dateRange : selectedDate}
-              onSelect={handleDateSelect as any}
+              onSelect={(value: any) => {
+                try {
+                  handleDateSelect(value);
+                } catch (error) {
+                  console.error('Error handling date selection:', error);
+                }
+              }}
               className="rounded-md border"
               modifiers={{
                 hasExpenses: (date) => {
-                  const dateKey = format(date, 'yyyy-MM-dd');
-                  return (expensesByDate[dateKey]?.length || 0) > 0;
+                  try {
+                    const dateKey = format(date, 'yyyy-MM-dd');
+                    return (expensesByDate[dateKey]?.length || 0) > 0;
+                  } catch (error) {
+                    console.error('Error checking expenses for date:', error);
+                    return false;
+                  }
                 }
               }}
               modifiersStyles={{
@@ -188,20 +271,27 @@ export function CalendarClient() {
                       </p>
                     </div>
                     <div className="space-y-2 max-h-64 overflow-y-auto">
-                      {rangeExpenses.map(expense => (
-                        <div key={expense.id} className="flex items-center justify-between p-2 border rounded">
-                          <div className="flex items-center gap-2">
-                            <CategoryIcon name={expense.category} className="h-4 w-4" />
-                            <div>
-                              <p className="text-sm font-medium">{expense.description}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {format(parseISO(expense.date), 'MMM dd')} • {expense.category}
-                              </p>
+                      {(() => {
+                        try {
+                          return rangeExpenses.map(expense => (
+                            <div key={expense.id} className="flex items-center justify-between p-2 border rounded">
+                              <div className="flex items-center gap-2">
+                                <CategoryIcon name={expense.category} className="h-4 w-4" />
+                                <div>
+                                  <p className="text-sm font-medium">{expense.description}</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {format(parseISO(expense.date), 'MMM dd')} • {expense.category}
+                                  </p>
+                                </div>
+                              </div>
+                              <span className="font-medium">{formatCurrency(expense.amount, currency)}</span>
                             </div>
-                          </div>
-                          <span className="font-medium">{formatCurrency(expense.amount, currency)}</span>
-                        </div>
-                      ))}
+                          ));
+                        } catch (error) {
+                          console.error('Error rendering range expenses:', error);
+                          return <div className="text-muted-foreground">Error loading expenses</div>;
+                        }
+                      })()}
                     </div>
                   </>
                 ) : (
@@ -228,20 +318,27 @@ export function CalendarClient() {
                       </p>
                     </div>
                     <div className="space-y-2 max-h-64 overflow-y-auto">
-                      {selectedDateExpenses.map(expense => (
-                        <div key={expense.id} className="flex items-center justify-between p-2 border rounded">
-                          <div className="flex items-center gap-2">
-                            <CategoryIcon name={expense.category} className="h-4 w-4" />
-                            <div>
-                              <p className="text-sm font-medium">{expense.description}</p>
-                              <Badge variant="outline" className="text-xs">
-                                {expense.category}
-                              </Badge>
+                      {(() => {
+                        try {
+                          return selectedDateExpenses.map(expense => (
+                            <div key={expense.id} className="flex items-center justify-between p-2 border rounded">
+                              <div className="flex items-center gap-2">
+                                <CategoryIcon name={expense.category} className="h-4 w-4" />
+                                <div>
+                                  <p className="text-sm font-medium">{expense.description}</p>
+                                  <Badge variant="outline" className="text-xs">
+                                    {expense.category}
+                                  </Badge>
+                                </div>
+                              </div>
+                              <span className="font-medium">{formatCurrency(expense.amount, currency)}</span>
                             </div>
-                          </div>
-                          <span className="font-medium">{formatCurrency(expense.amount, currency)}</span>
-                        </div>
-                      ))}
+                          ));
+                        } catch (error) {
+                          console.error('Error rendering selected date expenses:', error);
+                          return <div className="text-muted-foreground">Error loading expenses</div>;
+                        }
+                      })()}
                     </div>
                   </>
                 ) : (
@@ -271,22 +368,29 @@ export function CalendarClient() {
           </CardHeader>
           <CardContent>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {Object.entries(
-                rangeExpenses.reduce((acc, expense) => {
-                  acc[expense.category] = (acc[expense.category] || 0) + expense.amount;
-                  return acc;
-                }, {} as Record<string, number>)
-              )
-                .sort(([,a], [,b]) => b - a)
-                .map(([category, total]) => (
-                  <div key={category} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <CategoryIcon name={category as any} className="h-5 w-5" />
-                      <span className="font-medium">{category}</span>
-                    </div>
-                    <span className="font-bold">{formatCurrency(total, currency)}</span>
-                  </div>
-                ))}
+              {(() => {
+                try {
+                  const categoryTotals = rangeExpenses.reduce((acc, expense) => {
+                    acc[expense.category] = (acc[expense.category] || 0) + expense.amount;
+                    return acc;
+                  }, {} as Record<string, number>);
+                  
+                  return Object.entries(categoryTotals)
+                    .sort(([,a], [,b]) => b - a)
+                    .map(([category, total]) => (
+                      <div key={category} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <CategoryIcon name={category as any} className="h-5 w-5" />
+                          <span className="font-medium">{category}</span>
+                        </div>
+                        <span className="font-bold">{formatCurrency(total, currency)}</span>
+                      </div>
+                    ));
+                } catch (error) {
+                  console.error('Error generating category breakdown:', error);
+                  return <div className="text-muted-foreground">Error loading category breakdown</div>;
+                }
+              })()}
             </div>
           </CardContent>
         </Card>
