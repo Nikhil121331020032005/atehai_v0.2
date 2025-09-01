@@ -526,16 +526,33 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const getArchivedData = requireAuth(async (month: string) => {
     if (!user || !db) return null;
     
-    const archiveQuery = query(collection(db, 'users', user.uid, 'monthlyArchives'), where('month', '==', month));
-    const archiveSnapshot = await getDocs(archiveQuery);
-    
-    const archivedData: any = {};
-    archiveSnapshot.docs.forEach(doc => {
-      const data = doc.data();
-      archivedData[data.collection] = data.data || [];
-    });
-    
-    return archivedData;
+    try {
+      // Validate month format before querying
+      if (!month || typeof month !== 'string' || !/^\d{4}-\d{2}$/.test(month)) {
+        console.warn('Invalid month format for archive query:', month);
+        return {};
+      }
+      
+      const archiveQuery = query(collection(db, 'users', user.uid, 'monthlyArchives'), where('month', '==', month));
+      const archiveSnapshot = await getDocs(archiveQuery);
+      
+      const archivedData: any = {};
+      archiveSnapshot.docs.forEach(doc => {
+        try {
+          const data = doc.data();
+          if (data.collection && Array.isArray(data.data)) {
+            archivedData[data.collection] = data.data;
+          }
+        } catch (error) {
+          console.warn('Error processing archived document:', doc.id, error);
+        }
+      });
+      
+      return archivedData;
+    } catch (error) {
+      console.error('Error getting archived data:', error);
+      return {};
+    }
   });
 
 

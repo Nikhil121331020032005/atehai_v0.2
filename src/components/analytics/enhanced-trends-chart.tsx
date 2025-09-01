@@ -65,7 +65,55 @@ export function EnhancedTrendsChart({
     return intervals.map(date => {
       const dayExpenses = expenses
         .filter(expense => {
-          const expenseDate = parseISO(expense.date);
+          try {
+            if (!expense.date || expense.date === 'Invalid Date') {
+              return false;
+            }
+            const expenseDate = parseISO(expense.date);
+            if (isNaN(expenseDate.getTime())) {
+              return false;
+            }
+            return timeRange === 'yearly' 
+              ? format(expenseDate, 'yyyy-MM') === format(date, 'yyyy-MM')
+              : format(expenseDate, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd');
+          } catch (error) {
+            console.warn('Error filtering expense by date:', expense.date, error);
+            return false;
+          }
+        })
+        .reduce((sum, expense) => sum + expense.amount, 0);
+
+      const dayIncome = income
+        .filter(item => {
+          try {
+            if (!item.date || item.date === 'Invalid Date') {
+              return false;
+            }
+            const incomeDate = parseISO(item.date);
+            if (isNaN(incomeDate.getTime())) {
+              return false;
+            }
+            return item.status === 'Received' && (
+              timeRange === 'yearly' 
+                ? format(incomeDate, 'yyyy-MM') === format(date, 'yyyy-MM')
+                : format(incomeDate, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd')
+            );
+          } catch (error) {
+            console.warn('Error filtering income by date:', item.date, error);
+            return false;
+          }
+        })
+        .reduce((sum, item) => sum + item.amount, 0);
+
+      return {
+        name: format(date, formatStr),
+        expenses: dayExpenses,
+        income: dayIncome,
+        netFlow: dayIncome - dayExpenses,
+      };
+    });
+  }, [expenses, income, dateRange, timeRange, isLoading]);
+
           return timeRange === 'yearly' 
             ? format(expenseDate, 'yyyy-MM') === format(date, 'yyyy-MM')
             : format(expenseDate, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd');

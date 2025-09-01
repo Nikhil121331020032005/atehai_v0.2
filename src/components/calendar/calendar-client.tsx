@@ -26,11 +26,21 @@ export function CalendarClient() {
     try {
       const grouped: { [key: string]: Expense[] } = {};
       expenses.forEach(expense => {
-        const dateKey = expense.date;
-        if (!grouped[dateKey]) {
-          grouped[dateKey] = [];
+        try {
+          // Validate the date before using it
+          if (!expense.date || expense.date === 'Invalid Date') {
+            console.warn('Invalid expense date:', expense);
+            return;
+          }
+          
+          const dateKey = expense.date;
+          if (!grouped[dateKey]) {
+            grouped[dateKey] = [];
+          }
+          grouped[dateKey].push(expense);
+        } catch (error) {
+          console.warn('Error processing expense date:', expense, error);
         }
-        grouped[dateKey].push(expense);
       });
       return grouped;
     } catch (error) {
@@ -42,6 +52,13 @@ export function CalendarClient() {
   const selectedDateExpenses = useMemo(() => {
     try {
       if (!selectedDate) return [];
+      
+      // Validate selectedDate before formatting
+      if (isNaN(selectedDate.getTime())) {
+        console.warn('Invalid selectedDate:', selectedDate);
+        return [];
+      }
+      
       const dateKey = format(selectedDate, 'yyyy-MM-dd');
       return expensesByDate[dateKey] || [];
     } catch (error) {
@@ -55,11 +72,25 @@ export function CalendarClient() {
     
     try {
       return expenses.filter(expense => {
-        const expenseDate = parseISO(expense.date);
-        return isWithinInterval(expenseDate, {
-          start: startOfDay(dateRange.from!),
-          end: endOfDay(dateRange.to!),
-        });
+        try {
+          if (!expense.date || expense.date === 'Invalid Date') {
+            return false;
+          }
+          
+          const expenseDate = parseISO(expense.date);
+          if (isNaN(expenseDate.getTime())) {
+            console.warn('Invalid expense date for filtering:', expense.date);
+            return false;
+          }
+          
+          return isWithinInterval(expenseDate, {
+            start: startOfDay(dateRange.from!),
+            end: endOfDay(dateRange.to!),
+          });
+        } catch (error) {
+          console.warn('Error parsing expense date:', expense.date, error);
+          return false;
+        }
       });
     } catch (error) {
       console.error('Error filtering range expenses:', error);
@@ -69,12 +100,11 @@ export function CalendarClient() {
 
   const rangeTotalAmount = useMemo(() => {
     try {
-      return rangeExpenses.reduce((sum, expense) => sum + expense.amount, 0);
     } catch (error) {
       console.error('Error calculating range total:', error);
       return 0;
     }
-  }, [rangeExpenses]);
+  }, [isRangeMode, dateRange, expenses]);
 
   const selectedDateTotal = useMemo(() => {
     try {
@@ -87,6 +117,11 @@ export function CalendarClient() {
 
   const getDayExpenseTotal = (date: Date) => {
     try {
+      if (!date || isNaN(date.getTime())) {
+        console.warn('Invalid date passed to getDayExpenseTotal:', date);
+        return 0;
+      }
+      
       const dateKey = format(date, 'yyyy-MM-dd');
       const dayExpenses = expensesByDate[dateKey] || [];
       return dayExpenses.reduce((sum, expense) => sum + expense.amount, 0);
@@ -217,6 +252,9 @@ export function CalendarClient() {
               modifiers={{
                 hasExpenses: (date) => {
                   try {
+                    if (!date || isNaN(date.getTime())) {
+                      return false;
+                    }
                     const dateKey = format(date, 'yyyy-MM-dd');
                     return (expensesByDate[dateKey]?.length || 0) > 0;
                   } catch (error) {
@@ -280,7 +318,21 @@ export function CalendarClient() {
                                 <div>
                                   <p className="text-sm font-medium">{expense.description}</p>
                                   <p className="text-xs text-muted-foreground">
-                                    {format(parseISO(expense.date), 'MMM dd')} • {expense.category}
+                                    {(() => {
+                                      try {
+                                        if (!expense.date || expense.date === 'Invalid Date') {
+                                          return 'Invalid Date';
+                                        }
+                                        const expenseDate = parseISO(expense.date);
+                                        if (isNaN(expenseDate.getTime())) {
+                                          return 'Invalid Date';
+                                        }
+                                        return format(expenseDate, 'MMM dd');
+                                      } catch (error) {
+                                        console.warn('Error formatting expense date:', expense.date, error);
+                                        return 'Invalid Date';
+                                      }
+                                    })()} • {expense.category}
                                   </p>
                                 </div>
                               </div>

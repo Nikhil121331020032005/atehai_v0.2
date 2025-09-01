@@ -115,7 +115,18 @@ export default function ProfilePage() {
                                 <div className="flex items-center gap-4">
                                     <Skeleton className="h-20 w-20 rounded-full" />
                                     <div>
-                                        <Skeleton className="h-8 w-40 mb-2" />
+                                            Data archived on {(() => {
+                                                try {
+                                                    const archiveDate = new Date(month + '-01');
+                                                    if (isNaN(archiveDate.getTime())) {
+                                                        return 'Unknown date';
+                                                    }
+                                                    return format(archiveDate, 'MMMM yyyy');
+                                                } catch (error) {
+                                                    console.warn('Error formatting archive date:', month, error);
+                                                    return 'Unknown date';
+                                                }
+                                            })()}
                                         <Skeleton className="h-4 w-60" />
                                     </div>
                                 </div>
@@ -219,7 +230,18 @@ export default function ProfilePage() {
                                             onClick={() => loadArchivedData(month)}
                                             className="hover:bg-muted/50"
                                         >
-                                            {format(new Date(month + '-01'), 'MMMM yyyy')}
+                                            {(() => {
+                                                try {
+                                                    const archiveDate = new Date(month + '-01');
+                                                    if (isNaN(archiveDate.getTime())) {
+                                                        return month; // Fallback to raw month string
+                                                    }
+                                                    return format(archiveDate, 'MMMM yyyy');
+                                                } catch (error) {
+                                                    console.warn('Error formatting month for accordion:', month, error);
+                                                    return month; // Fallback to raw month string
+                                                }
+                                            })()}
                                             {loadingArchivedData === month && (
                                                 <span className="text-xs text-muted-foreground ml-2">Loading...</span>
                                             )}
@@ -268,7 +290,18 @@ export default function ProfilePage() {
                                             )}
                                         </AccordionContent>
                                     </AccordionItem>
-                                ))
+                                        Click to load archived data for {(() => {
+                                            try {
+                                                const archiveDate = new Date(month + '-01');
+                                                if (isNaN(archiveDate.getTime())) {
+                                                    return 'this month';
+                                                }
+                                                return format(archiveDate, 'MMMM yyyy');
+                                            } catch (error) {
+                                                console.warn('Error formatting archive date:', month, error);
+                                                return 'this month';
+                                            }
+                                        })()}
                             ) : (
                                 <p className="text-sm text-muted-foreground text-center py-4">No archived reports found.</p>
                             )}

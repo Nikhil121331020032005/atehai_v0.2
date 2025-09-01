@@ -25,18 +25,31 @@ export function RecentExpenses({ expenses }: RecentExpensesProps) {
 
   const filteredExpenses = isSearchActive && (searchStartDate || searchEndDate)
     ? expenses.filter(expense => {
-        const expenseDate = parseISO(expense.date);
-        const start = searchStartDate ? startOfDay(parseISO(searchStartDate)) : null;
-        const end = searchEndDate ? endOfDay(parseISO(searchEndDate)) : null;
-        
-        if (start && end) {
-          return isWithinInterval(expenseDate, { start, end });
-        } else if (start) {
-          return expenseDate >= start;
-        } else if (end) {
-          return expenseDate <= end;
+        try {
+          if (!expense.date || expense.date === 'Invalid Date') {
+            return false;
+          }
+          
+          const expenseDate = parseISO(expense.date);
+          if (isNaN(expenseDate.getTime())) {
+            return false;
+          }
+          
+          const start = searchStartDate ? startOfDay(parseISO(searchStartDate)) : null;
+          const end = searchEndDate ? endOfDay(parseISO(searchEndDate)) : null;
+          
+          if (start && end) {
+            return isWithinInterval(expenseDate, { start, end });
+          } else if (start) {
+            return expenseDate >= start;
+          } else if (end) {
+            return expenseDate <= end;
+          }
+          return true;
+        } catch (error) {
+          console.warn('Error filtering expense by date range:', expense.date, error);
+          return false;
         }
-        return true;
       })
     : expenses.slice(0, 10);
 
@@ -120,7 +133,21 @@ export function RecentExpenses({ expenses }: RecentExpensesProps) {
                   <div className="flex-1 space-y-1">
                     <p className="text-sm font-medium leading-none truncate">{expense.description}</p>
                     <p className="text-xs text-muted-foreground">
-                      {expense.category} • {format(parseISO(expense.date), 'MMM dd, yyyy')}
+                      {expense.category} • {(() => {
+                        try {
+                          if (!expense.date || expense.date === 'Invalid Date') {
+                            return 'Invalid Date';
+                          }
+                          const expenseDate = parseISO(expense.date);
+                          if (isNaN(expenseDate.getTime())) {
+                            return 'Invalid Date';
+                          }
+                          return format(expenseDate, 'MMM dd, yyyy');
+                        } catch (error) {
+                          console.warn('Error formatting expense date:', expense.date, error);
+                          return 'Invalid Date';
+                        }
+                      })()}
                     </p>
                   </div>
                   <div className="font-medium text-right">{formatCurrency(expense.amount, currency)}</div>
