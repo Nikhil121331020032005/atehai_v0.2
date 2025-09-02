@@ -11,11 +11,45 @@ import { formatCurrency } from '@/lib/utils';
 import { CategoryIcon } from '@/components/icons';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAppContext } from '@/context/app-context';
+<<<<<<< HEAD
 import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { parseDateSafe, safeFormatDate } from '@/lib/date';
+=======
+import { format, parseISO, isWithinInterval, startOfDay, endOfDay, isValid } from 'date-fns';
+>>>>>>> 7493b07f0eeb95c84a2e2864cbfc6403f29244b6
 
 type RecentExpensesProps = {
   expenses: Expense[];
+};
+
+// Helper function to safely parse and validate dates
+const safeParseDate = (dateString: string | null | undefined): Date | null => {
+  if (!dateString || typeof dateString !== 'string' || dateString.trim() === '') {
+    return null;
+  }
+  
+  try {
+    const parsed = parseISO(dateString);
+    return isValid(parsed) ? parsed : null;
+  } catch (error) {
+    console.warn('Failed to parse date:', dateString, error);
+    return null;
+  }
+};
+
+// Helper function to safely format dates
+const safeFormatDate = (dateString: string | null | undefined, formatStr: string): string => {
+  const date = safeParseDate(dateString);
+  if (!date) {
+    return 'Invalid Date';
+  }
+  
+  try {
+    return format(date, formatStr);
+  } catch (error) {
+    console.warn('Failed to format date:', dateString, error);
+    return 'Invalid Date';
+  }
 };
 
 export function RecentExpenses({ expenses }: RecentExpensesProps) {
@@ -24,7 +58,11 @@ export function RecentExpenses({ expenses }: RecentExpensesProps) {
   const [searchEndDate, setSearchEndDate] = useState('');
   const [isSearchActive, setIsSearchActive] = useState(false);
 
+  // Filter out expenses with invalid dates first
+  const validExpenses = expenses.filter(expense => safeParseDate(expense.date) !== null);
+
   const filteredExpenses = isSearchActive && (searchStartDate || searchEndDate)
+<<<<<<< HEAD
     ? expenses.filter(expense => {
         const expenseDate = parseDateSafe(expense.date);
         const start = searchStartDate ? startOfDay(parseDateSafe(searchStartDate)!) : null;
@@ -37,10 +75,30 @@ export function RecentExpenses({ expenses }: RecentExpensesProps) {
           return expenseDate >= start;
         } else if (end) {
           return expenseDate <= end;
+=======
+    ? validExpenses.filter(expense => {
+        const expenseDate = safeParseDate(expense.date);
+        if (!expenseDate) return false;
+        
+        try {
+          const start = searchStartDate ? startOfDay(parseISO(searchStartDate)) : null;
+          const end = searchEndDate ? endOfDay(parseISO(searchEndDate)) : null;
+          
+          if (start && end) {
+            return isWithinInterval(expenseDate, { start, end });
+          } else if (start) {
+            return expenseDate >= start;
+          } else if (end) {
+            return expenseDate <= end;
+          }
+          return true;
+        } catch (error) {
+          console.warn('Error filtering expense by date range:', expense.date, error);
+          return false;
+>>>>>>> 7493b07f0eeb95c84a2e2864cbfc6403f29244b6
         }
-        return true;
       })
-    : expenses.slice(0, 10);
+    : validExpenses.slice(0, 10);
 
   const handleSearch = () => {
     setIsSearchActive(true);
