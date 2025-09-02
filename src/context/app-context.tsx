@@ -41,6 +41,7 @@ interface AppContextType {
   profile: Profile | null;
   currency: Currency;
   addExpense: (expense: Omit<Expense, 'id'>) => Promise<void>;
+  deleteExpense: (id: string) => Promise<void>;
   updateBudgets: (newBudgets: Pick<Budget, 'category' | 'amount'>[]) => Promise<void>;
   setCurrency: (currency: Currency) => Promise<void>;
   isLoading: boolean;
@@ -220,6 +221,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   }
   
   const addExpense = requireAuth(async (expense: Omit<Expense, 'id'>) => addDocForUser('expenses', expense));
+  const deleteExpense = requireAuth(async (id: string) => deleteDocForUser('expenses', id));
 
   const updateBudgets = requireAuth(async (newBudgets: Pick<Budget, 'category' | 'amount'>[]) => {
     const batch = writeBatch(db!);
@@ -570,6 +572,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       profile,
       currency,
       addExpense,
+      deleteExpense,
       updateBudgets,
       setCurrency: handleSetCurrency,
       isLoading: isAuthLoading || isDataLoading,

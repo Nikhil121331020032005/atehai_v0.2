@@ -93,7 +93,6 @@ export default function ProfilePage() {
                 const unsubscribe = onSnapshot(archiveColRef, (snapshot) => {
                     const months = snapshot.docs
                         .map(doc => doc.id)
-                        .filter(id => /^\d{4}-\d{2}$/.test(id)) // Only valid YYYY-MM format
                         .sort((a, b) => b.localeCompare(a));
                     setArchivedMonths(months);
                 }, (error) => {

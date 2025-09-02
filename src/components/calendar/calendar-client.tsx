@@ -8,9 +8,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { formatCurrency } from '@/lib/utils';
 import { CategoryIcon } from '@/components/icons';
-import { format } from 'date-fns';
 import { safeFormatDate, parseDateSafe, isWithinIntervalSafe } from '@/lib/date';
 import { CalendarDays, Calculator } from 'lucide-react';
+import type { DateRange } from 'react-day-picker';
 import type { Expense } from '@/lib/types';
 
 
@@ -23,13 +23,20 @@ export function CalendarClient() {
   });
   const [isRangeMode, setIsRangeMode] = useState(false);
 
+  const formatDateKey = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   // Filter out expenses with invalid dates and group by valid dates
   const expensesByDate = useMemo(() => {
     const grouped: { [key: string]: Expense[] } = {};
     expenses.forEach(expense => {
       const parsedDate = parseDateSafe(expense.date);
       if (parsedDate) {
-        const dateKey = format(parsedDate, 'yyyy-MM-dd');
+        const dateKey = formatDateKey(parsedDate);
         if (!grouped[dateKey]) {
           grouped[dateKey] = [];
         }
@@ -42,7 +49,7 @@ export function CalendarClient() {
   const selectedDateExpenses = useMemo(() => {
     if (!selectedDate || isNaN(selectedDate.getTime())) return [];
     
-    const dateKey = format(selectedDate, 'yyyy-MM-dd');
+    const dateKey = formatDateKey(selectedDate);
     return expensesByDate[dateKey] || [];
   }, [selectedDate, expensesByDate]);
 
@@ -71,7 +78,7 @@ export function CalendarClient() {
     if (!date || isNaN(date.getTime())) return 0;
     
     try {
-      const dateKey = format(date, 'yyyy-MM-dd');
+      const dateKey = formatDateKey(date);
       const dayExpenses = expensesByDate[dateKey] || [];
       return dayExpenses.reduce((sum, expense) => sum + expense.amount, 0);
     } catch (error) {
@@ -80,22 +87,23 @@ export function CalendarClient() {
     }
   };
 
-  const handleDateSelect = (date: Date | undefined) => {
+  const handleCalendarSelect = (value: Date | DateRange | undefined) => {
     if (isRangeMode) {
-      if (!date) return;
-      
-      if (!dateRange.from || (dateRange.from && dateRange.to)) {
-        setDateRange({ from: date, to: undefined });
-      } else if (dateRange.from && !dateRange.to) {
-        if (date >= dateRange.from) {
-          setDateRange({ from: dateRange.from, to: date });
-        } else {
-          setDateRange({ from: date, to: dateRange.from });
-        }
+      if (!value) return;
+      const maybeRange = value as DateRange | undefined;
+      if (maybeRange && typeof maybeRange === 'object' && ('from' in (maybeRange as any) || 'to' in (maybeRange as any))) {
+        const from = maybeRange?.from ? new Date(maybeRange.from) : undefined;
+        const to = maybeRange?.to ? new Date(maybeRange.to) : undefined;
+        setDateRange({ from, to });
+        return;
       }
-    } else {
-      setSelectedDate(date);
+      if (value instanceof Date) {
+        setDateRange({ from: value, to: undefined });
+        return;
+      }
+      return;
     }
+    setSelectedDate(value as Date | undefined);
   };
 
   const toggleMode = () => {
@@ -150,30 +158,57 @@ export function CalendarClient() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Calendar
-              mode={isRangeMode ? "range" : "single"}
-              selected={isRangeMode ? dateRange : selectedDate}
-              onSelect={handleDateSelect}
-              className="rounded-md border"
-              modifiers={{
-                hasExpenses: (date) => {
-                  try {
-                    if (!date || isNaN(date.getTime())) return false;
-                    const dateKey = format(date, 'yyyy-MM-dd');
-                    return (expensesByDate[dateKey]?.length || 0) > 0;
-                  } catch (error) {
-                    return false;
+            {isRangeMode ? (
+              <Calendar
+                mode="range"
+                selected={dateRange}
+                onSelect={handleCalendarSelect}
+                className="rounded-md border"
+                modifiers={{
+                  hasExpenses: (date) => {
+                    try {
+                      if (!date || isNaN(date.getTime())) return false;
+                      const dateKey = formatDateKey(date);
+                      return (expensesByDate[dateKey]?.length || 0) > 0;
+                    } catch (error) {
+                      return false;
+                    }
                   }
-                }
-              }}
-              modifiersStyles={{
-                hasExpenses: {
-                  backgroundColor: 'hsl(var(--primary))',
-                  color: 'hsl(var(--primary-foreground))',
-                  fontWeight: 'bold',
-                }
-              }}
-            />
+                }}
+                modifiersStyles={{
+                  hasExpenses: {
+                    backgroundColor: 'hsl(var(--primary))',
+                    color: 'hsl(var(--primary-foreground))',
+                    fontWeight: 'bold',
+                  }
+                }}
+              />
+            ) : (
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={handleCalendarSelect}
+                className="rounded-md border"
+                modifiers={{
+                  hasExpenses: (date) => {
+                    try {
+                      if (!date || isNaN(date.getTime())) return false;
+                      const dateKey = formatDateKey(date);
+                      return (expensesByDate[dateKey]?.length || 0) > 0;
+                    } catch (error) {
+                      return false;
+                    }
+                  }
+                }}
+                modifiersStyles={{
+                  hasExpenses: {
+                    backgroundColor: 'hsl(var(--primary))',
+                    color: 'hsl(var(--primary-foreground))',
+                    fontWeight: 'bold',
+                  }
+                }}
+              />
+            )}
             <div className="mt-4 text-xs text-muted-foreground">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 bg-primary rounded-sm"></div>
@@ -245,7 +280,7 @@ export function CalendarClient() {
                 {selectedDate && selectedDateExpenses.length > 0 ? (
                   <>
                     <div className="text-center p-4 bg-muted rounded-lg">
-                      <p className="text-sm text-muted-foreground">Total for {format(selectedDate, 'MMM dd')}</p>
+                      <p className="text-sm text-muted-foreground">Total for {safeFormatDate(selectedDate, 'MMM dd')}</p>
                       <p className="text-2xl font-bold">{formatCurrency(selectedDateTotal, currency)}</p>
                       <p className="text-xs text-muted-foreground mt-1">
                         {selectedDateExpenses.length} transaction{selectedDateExpenses.length !== 1 ? 's' : ''}

@@ -19,7 +19,7 @@ type RecentExpensesProps = {
 };
 
 export function RecentExpenses({ expenses }: RecentExpensesProps) {
-  const { currency } = useAppContext();
+  const { currency, deleteExpense } = useAppContext();
   const [searchStartDate, setSearchStartDate] = useState('');
   const [searchEndDate, setSearchEndDate] = useState('');
   const [isSearchActive, setIsSearchActive] = useState(false);
@@ -129,7 +129,19 @@ export function RecentExpenses({ expenses }: RecentExpensesProps) {
                       {expense.category} • {safeFormatDate(expense.date, 'MMM dd, yyyy')}
                     </p>
                   </div>
-                  <div className="font-medium text-right">{formatCurrency(expense.amount, currency)}</div>
+                  <div className="flex items-center gap-2">
+                    <div className="font-medium text-right">{formatCurrency(expense.amount, currency)}</div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-2 text-destructive"
+                      onClick={async () => {
+                        await deleteExpense(expense.id);
+                      }}
+                    >
+                      Delete
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>

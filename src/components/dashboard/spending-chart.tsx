@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useCallback } from 'react';
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import type { Expense } from '@/lib/types';
@@ -38,6 +38,26 @@ export function SpendingChart({ expenses }: SpendingChartProps) {
     }
   };
 
+  const renderClickableTick = useCallback((props: any) => {
+    const { x, y, payload } = props;
+    const name = payload?.value;
+    const handleClick = () => {
+      if (name) router.push(`/expenses/${encodeURIComponent(name)}`);
+    };
+    return (
+      <text
+        x={x}
+        y={y}
+        dy={4}
+        textAnchor="end"
+        className="cursor-pointer fill-current"
+        onClick={handleClick}
+      >
+        {name}
+      </text>
+    );
+  }, [router]);
+
   return (
     <Card className="h-full">
       <CardHeader>
@@ -59,7 +79,8 @@ export function SpendingChart({ expenses }: SpendingChartProps) {
                 dataKey="name" 
                 axisLine={false}
                 tickLine={false}
-                width={80}
+                width={120}
+                tick={renderClickableTick}
               />
               <Tooltip
                 cursor={{ fill: 'hsl(var(--muted))' }}
