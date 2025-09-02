@@ -12,7 +12,7 @@ import {
   parseISO, 
   eachDayOfInterval,
   eachMonthOfInterval,
-  isWithinInterval
+  isValid
 } from 'date-fns';
 
 interface EnhancedTrendsChartProps {
@@ -22,6 +22,21 @@ interface EnhancedTrendsChartProps {
   timeRange: 'weekly' | 'monthly' | 'yearly';
   isLoading: boolean;
 }
+
+// Helper function to safely parse and validate dates
+const safeParseDate = (dateString: string | null | undefined): Date | null => {
+  if (!dateString || typeof dateString !== 'string' || dateString.trim() === '') {
+    return null;
+  }
+  
+  try {
+    const parsed = parseISO(dateString);
+    return isValid(parsed) ? parsed : null;
+  } catch (error) {
+    console.warn('Failed to parse date:', dateString, error);
+    return null;
+  }
+};
 
 export function EnhancedTrendsChart({ 
   expenses, 
@@ -65,19 +80,15 @@ export function EnhancedTrendsChart({
     return intervals.map(date => {
       const dayExpenses = expenses
         .filter(expense => {
+          const expenseDate = safeParseDate(expense.date);
+          if (!expenseDate) return false;
+          
           try {
-            if (!expense.date || expense.date === 'Invalid Date') {
-              return false;
-            }
-            const expenseDate = parseISO(expense.date);
-            if (isNaN(expenseDate.getTime())) {
-              return false;
-            }
             return timeRange === 'yearly' 
               ? format(expenseDate, 'yyyy-MM') === format(date, 'yyyy-MM')
               : format(expenseDate, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd');
           } catch (error) {
-            console.warn('Error filtering expense by date:', expense.date, error);
+            console.warn('Error comparing expense date:', expense.date, error);
             return false;
           }
         })
@@ -85,49 +96,19 @@ export function EnhancedTrendsChart({
 
       const dayIncome = income
         .filter(item => {
+          const incomeDate = safeParseDate(item.date);
+          if (!incomeDate) return false;
+          
           try {
-            if (!item.date || item.date === 'Invalid Date') {
-              return false;
-            }
-            const incomeDate = parseISO(item.date);
-            if (isNaN(incomeDate.getTime())) {
-              return false;
-            }
             return item.status === 'Received' && (
               timeRange === 'yearly' 
                 ? format(incomeDate, 'yyyy-MM') === format(date, 'yyyy-MM')
                 : format(incomeDate, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd')
             );
           } catch (error) {
-            console.warn('Error filtering income by date:', item.date, error);
+            console.warn('Error comparing income date:', item.date, error);
             return false;
           }
-        })
-        .reduce((sum, item) => sum + item.amount, 0);
-
-      return {
-        name: format(date, formatStr),
-        expenses: dayExpenses,
-        income: dayIncome,
-        netFlow: dayIncome - dayExpenses,
-      };
-    });
-  }, [expenses, income, dateRange, timeRange, isLoading]);
-
-          return timeRange === 'yearly' 
-            ? format(expenseDate, 'yyyy-MM') === format(date, 'yyyy-MM')
-            : format(expenseDate, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd');
-        })
-        .reduce((sum, expense) => sum + expense.amount, 0);
-
-      const dayIncome = income
-        .filter(item => {
-          const incomeDate = parseISO(item.date);
-          return item.status === 'Received' && (
-            timeRange === 'yearly' 
-              ? format(incomeDate, 'yyyy-MM') === format(date, 'yyyy-MM')
-              : format(incomeDate, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd')
-          );
         })
         .reduce((sum, item) => sum + item.amount, 0);
 

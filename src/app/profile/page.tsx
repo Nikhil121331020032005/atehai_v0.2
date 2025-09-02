@@ -1,4 +1,3 @@
-
 'use client';
 
 import AppLayout from "@/components/app-layout";
@@ -30,11 +29,51 @@ import {
 import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useEffect, useState } from "react";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, isValid } from "date-fns";
 import { EditProfileDialog } from "@/components/profile/edit-profile-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 
+// Helper function to safely format dates
+const safeFormatDate = (dateString: string | null | undefined, formatStr: string): string => {
+  if (!dateString || typeof dateString !== 'string' || dateString.trim() === '') {
+    return 'Unknown date';
+  }
+  
+  try {
+    // Handle month-only format (YYYY-MM)
+    if (/^\d{4}-\d{2}$/.test(dateString)) {
+      const date = parseISO(dateString + '-01');
+      return isValid(date) ? format(date, formatStr) : 'Unknown date';
+    }
+    
+    // Handle full date format
+    const date = parseISO(dateString);
+    return isValid(date) ? format(date, formatStr) : 'Unknown date';
+  } catch (error) {
+    console.warn('Failed to format date:', dateString, error);
+    return 'Unknown date';
+  }
+};
+
+// Helper function to safely calculate totals from arrays with potential invalid data
+const safeTotalExpenses = (expenses: any[]): number => {
+  if (!Array.isArray(expenses)) return 0;
+  
+  return expenses.reduce((sum: number, expense: any) => {
+    const amount = typeof expense?.amount === 'number' ? expense.amount : 0;
+    return sum + amount;
+  }, 0);
+};
+
+const safeTotalIncome = (income: any[]): number => {
+  if (!Array.isArray(income)) return 0;
+  
+  return income.reduce((sum: number, item: any) => {
+    const amount = typeof item?.amount === 'number' ? item.amount : 0;
+    return sum + amount;
+  }, 0);
+};
 
 export default function ProfilePage() {
     const { user, logout } = useAuth();
@@ -48,13 +87,24 @@ export default function ProfilePage() {
     const [loadingArchivedData, setLoadingArchivedData] = useState<string | null>(null);
 
     useEffect(() => {
-        if (user) {
-            const archiveColRef = collection(db, 'users', user.uid, 'monthlyArchives');
-            const unsubscribe = onSnapshot(archiveColRef, (snapshot) => {
-                const months = snapshot.docs.map(doc => doc.id).sort((a, b) => b.localeCompare(a));
-                setArchivedMonths(months);
-            });
-            return () => unsubscribe();
+        if (user && db) {
+            try {
+                const archiveColRef = collection(db, 'users', user.uid, 'monthlyArchives');
+                const unsubscribe = onSnapshot(archiveColRef, (snapshot) => {
+                    const months = snapshot.docs
+                        .map(doc => doc.id)
+                        .filter(id => /^\d{4}-\d{2}$/.test(id)) // Only valid YYYY-MM format
+                        .sort((a, b) => b.localeCompare(a));
+                    setArchivedMonths(months);
+                }, (error) => {
+                    console.error('Error fetching archived months:', error);
+                    setArchivedMonths([]);
+                });
+                return () => unsubscribe();
+            } catch (error) {
+                console.error('Error setting up archived months listener:', error);
+                setArchivedMonths([]);
+            }
         }
     }, [user]);
 
@@ -91,18 +141,11 @@ export default function ProfilePage() {
             const data = await getArchivedData(month);
             setArchivedData(prev => ({ ...prev, [month]: data }));
         } catch (error) {
+            console.error('Error loading archived data:', error);
             toast({ variant: 'destructive', title: 'Error', description: 'Failed to load archived data.' });
         } finally {
             setLoadingArchivedData(null);
         }
-    }
-
-    const getTotalExpenses = (expenses: any[]) => {
-        return expenses?.reduce((sum: number, expense: any) => sum + (expense.amount || 0), 0) || 0;
-    }
-
-    const getTotalIncome = (income: any[]) => {
-        return income?.reduce((sum: number, item: any) => sum + (item.amount || 0), 0) || 0;
     }
 
     if (isLoading || !profile) {
@@ -115,18 +158,7 @@ export default function ProfilePage() {
                                 <div className="flex items-center gap-4">
                                     <Skeleton className="h-20 w-20 rounded-full" />
                                     <div>
-                                            Data archived on {(() => {
-                                                try {
-                                                    const archiveDate = new Date(month + '-01');
-                                                    if (isNaN(archiveDate.getTime())) {
-                                                        return 'Unknown date';
-                                                    }
-                                                    return format(archiveDate, 'MMMM yyyy');
-                                                } catch (error) {
-                                                    console.warn('Error formatting archive date:', month, error);
-                                                    return 'Unknown date';
-                                                }
-                                            })()}
+                                        <Skeleton className="h-8 w-48 mb-2" />
                                         <Skeleton className="h-4 w-60" />
                                     </div>
                                 </div>
@@ -230,18 +262,7 @@ export default function ProfilePage() {
                                             onClick={() => loadArchivedData(month)}
                                             className="hover:bg-muted/50"
                                         >
-                                            {(() => {
-                                                try {
-                                                    const archiveDate = new Date(month + '-01');
-                                                    if (isNaN(archiveDate.getTime())) {
-                                                        return month; // Fallback to raw month string
-                                                    }
-                                                    return format(archiveDate, 'MMMM yyyy');
-                                                } catch (error) {
-                                                    console.warn('Error formatting month for accordion:', month, error);
-                                                    return month; // Fallback to raw month string
-                                                }
-                                            })()}
+                                            {safeFormatDate(month, 'MMMM yyyy')}
                                             {loadingArchivedData === month && (
                                                 <span className="text-xs text-muted-foreground ml-2">Loading...</span>
                                             )}
@@ -253,13 +274,13 @@ export default function ProfilePage() {
                                                         <div className="bg-muted/50 p-3 rounded-lg">
                                                             <div className="text-sm font-medium text-muted-foreground">Total Expenses</div>
                                                             <div className="text-lg font-semibold text-destructive">
-                                                                ₹{getTotalExpenses(archivedData[month].expenses).toLocaleString()}
+                                                                ₹{safeTotalExpenses(archivedData[month].expenses).toLocaleString()}
                                                             </div>
                                                         </div>
                                                         <div className="bg-muted/50 p-3 rounded-lg">
                                                             <div className="text-sm font-medium text-muted-foreground">Total Income</div>
                                                             <div className="text-lg font-semibold text-green-600">
-                                                                ₹{getTotalIncome(archivedData[month].income).toLocaleString()}
+                                                                ₹{safeTotalIncome(archivedData[month].income).toLocaleString()}
                                                             </div>
                                                         </div>
                                                     </div>
@@ -267,41 +288,30 @@ export default function ProfilePage() {
                                                     <div className="space-y-2">
                                                         <h4 className="font-medium">Summary</h4>
                                                         <div className="text-sm space-y-1">
-                                                            <div>Expenses: {archivedData[month].expenses?.length || 0} transactions</div>
-                                                            <div>Income: {archivedData[month].income?.length || 0} transactions</div>
-                                                            <div>Borrow/Lend: {archivedData[month].borrowLend?.length || 0} records</div>
-                                                            <div>Assets: {archivedData[month].assets?.length || 0} items</div>
-                                                            <div>Liabilities: {archivedData[month].liabilities?.length || 0} items</div>
+                                                            <div>Expenses: {Array.isArray(archivedData[month].expenses) ? archivedData[month].expenses.length : 0} transactions</div>
+                                                            <div>Income: {Array.isArray(archivedData[month].income) ? archivedData[month].income.length : 0} transactions</div>
+                                                            <div>Borrow/Lend: {Array.isArray(archivedData[month].borrowLend) ? archivedData[month].borrowLend.length : 0} records</div>
+                                                            <div>Assets: {Array.isArray(archivedData[month].assets) ? archivedData[month].assets.length : 0} items</div>
+                                                            <div>Liabilities: {Array.isArray(archivedData[month].liabilities) ? archivedData[month].liabilities.length : 0} items</div>
                                                         </div>
                                                     </div>
                                                     
                                                     <div className="pt-2 border-t">
                                                         <p className="text-xs text-muted-foreground">
-                                                            Data archived on {format(new Date(month + '-01'), 'MMMM yyyy')}
+                                                            Data archived on {safeFormatDate(month, 'MMMM yyyy')}
                                                         </p>
                                                     </div>
                                                 </div>
                                             ) : (
                                                 <div className="text-center py-4">
                                                     <p className="text-sm text-muted-foreground">
-                                                        Click to load archived data for {format(new Date(month + '-01'), 'MMMM yyyy')}
+                                                        Click to load archived data for {safeFormatDate(month, 'MMMM yyyy')}
                                                     </p>
                                                 </div>
                                             )}
                                         </AccordionContent>
                                     </AccordionItem>
-                                        Click to load archived data for {(() => {
-                                            try {
-                                                const archiveDate = new Date(month + '-01');
-                                                if (isNaN(archiveDate.getTime())) {
-                                                    return 'this month';
-                                                }
-                                                return format(archiveDate, 'MMMM yyyy');
-                                            } catch (error) {
-                                                console.warn('Error formatting archive date:', month, error);
-                                                return 'this month';
-                                            }
-                                        })()}
+                                ))
                             ) : (
                                 <p className="text-sm text-muted-foreground text-center py-4">No archived reports found.</p>
                             )}

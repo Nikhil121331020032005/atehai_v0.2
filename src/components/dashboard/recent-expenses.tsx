@@ -11,10 +11,40 @@ import { formatCurrency } from '@/lib/utils';
 import { CategoryIcon } from '@/components/icons';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAppContext } from '@/context/app-context';
-import { format, parseISO, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
+import { format, parseISO, isWithinInterval, startOfDay, endOfDay, isValid } from 'date-fns';
 
 type RecentExpensesProps = {
   expenses: Expense[];
+};
+
+// Helper function to safely parse and validate dates
+const safeParseDate = (dateString: string | null | undefined): Date | null => {
+  if (!dateString || typeof dateString !== 'string' || dateString.trim() === '') {
+    return null;
+  }
+  
+  try {
+    const parsed = parseISO(dateString);
+    return isValid(parsed) ? parsed : null;
+  } catch (error) {
+    console.warn('Failed to parse date:', dateString, error);
+    return null;
+  }
+};
+
+// Helper function to safely format dates
+const safeFormatDate = (dateString: string | null | undefined, formatStr: string): string => {
+  const date = safeParseDate(dateString);
+  if (!date) {
+    return 'Invalid Date';
+  }
+  
+  try {
+    return format(date, formatStr);
+  } catch (error) {
+    console.warn('Failed to format date:', dateString, error);
+    return 'Invalid Date';
+  }
 };
 
 export function RecentExpenses({ expenses }: RecentExpensesProps) {
@@ -23,18 +53,15 @@ export function RecentExpenses({ expenses }: RecentExpensesProps) {
   const [searchEndDate, setSearchEndDate] = useState('');
   const [isSearchActive, setIsSearchActive] = useState(false);
 
+  // Filter out expenses with invalid dates first
+  const validExpenses = expenses.filter(expense => safeParseDate(expense.date) !== null);
+
   const filteredExpenses = isSearchActive && (searchStartDate || searchEndDate)
-    ? expenses.filter(expense => {
+    ? validExpenses.filter(expense => {
+        const expenseDate = safeParseDate(expense.date);
+        if (!expenseDate) return false;
+        
         try {
-          if (!expense.date || expense.date === 'Invalid Date') {
-            return false;
-          }
-          
-          const expenseDate = parseISO(expense.date);
-          if (isNaN(expenseDate.getTime())) {
-            return false;
-          }
-          
           const start = searchStartDate ? startOfDay(parseISO(searchStartDate)) : null;
           const end = searchEndDate ? endOfDay(parseISO(searchEndDate)) : null;
           
@@ -51,7 +78,7 @@ export function RecentExpenses({ expenses }: RecentExpensesProps) {
           return false;
         }
       })
-    : expenses.slice(0, 10);
+    : validExpenses.slice(0, 10);
 
   const handleSearch = () => {
     setIsSearchActive(true);
@@ -133,21 +160,7 @@ export function RecentExpenses({ expenses }: RecentExpensesProps) {
                   <div className="flex-1 space-y-1">
                     <p className="text-sm font-medium leading-none truncate">{expense.description}</p>
                     <p className="text-xs text-muted-foreground">
-                      {expense.category} • {(() => {
-                        try {
-                          if (!expense.date || expense.date === 'Invalid Date') {
-                            return 'Invalid Date';
-                          }
-                          const expenseDate = parseISO(expense.date);
-                          if (isNaN(expenseDate.getTime())) {
-                            return 'Invalid Date';
-                          }
-                          return format(expenseDate, 'MMM dd, yyyy');
-                        } catch (error) {
-                          console.warn('Error formatting expense date:', expense.date, error);
-                          return 'Invalid Date';
-                        }
-                      })()}
+                      {expense.category} • {safeFormatDate(expense.date, 'MMM dd, yyyy')}
                     </p>
                   </div>
                   <div className="font-medium text-right">{formatCurrency(expense.amount, currency)}</div>
