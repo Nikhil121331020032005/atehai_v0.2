@@ -13,6 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Calendar, TrendingUp, BarChart3 } from "lucide-react";
 import { format, subMonths, subWeeks, subYears, startOfMonth, endOfMonth, startOfWeek, endOfWeek, startOfYear, endOfYear } from "date-fns";
+import { parseDateSafe } from "@/lib/date";
 
 export default function AnalyticsPage() {
   return (
@@ -63,7 +64,11 @@ function AnalyticsClient() {
         break;
       case 'custom':
         if (customStartDate && customEndDate) {
-          return { start: new Date(customStartDate), end: new Date(customEndDate) };
+          const start = parseDateSafe(customStartDate);
+          const end = parseDateSafe(customEndDate);
+          if (start && end) {
+            return { start, end } as { start: Date; end: Date };
+          }
         }
         return { start: startOfMonth(now), end: endOfMonth(now) };
     }
@@ -86,12 +91,14 @@ function AnalyticsClient() {
           } else {
             // If no archived data, filter current data by date range
             const filteredExpenses = expenses.filter(expense => {
-              const expenseDate = new Date(expense.date);
+              const expenseDate = parseDateSafe(expense.date);
+              if (!expenseDate) return false;
               return expenseDate >= dateRange.start && expenseDate <= dateRange.end;
             });
             
             const filteredIncome = income.filter(item => {
-              const incomeDate = new Date(item.date);
+              const incomeDate = parseDateSafe(item.date);
+              if (!incomeDate) return false;
               return incomeDate >= dateRange.start && incomeDate <= dateRange.end;
             });
             

@@ -8,7 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { formatCurrency } from '@/lib/utils';
 import { CategoryIcon } from '@/components/icons';
-import { format, parseISO, isSameDay, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
+import { format, parseISO } from 'date-fns';
+import { safeFormatDate, parseDateSafe, isWithinIntervalSafe } from '@/lib/date';
 import { CalendarDays, Calculator } from 'lucide-react';
 import type { Expense } from '@/lib/types';
 
@@ -55,11 +56,9 @@ export function CalendarClient() {
     
     try {
       return expenses.filter(expense => {
-        const expenseDate = parseISO(expense.date);
-        return isWithinInterval(expenseDate, {
-          start: startOfDay(dateRange.from!),
-          end: endOfDay(dateRange.to!),
-        });
+        const expenseDate = parseDateSafe(expense.date);
+        if (!expenseDate) return false; // ignore invalid records
+        return isWithinIntervalSafe(expenseDate, dateRange.from!, dateRange.to!);
       });
     } catch (error) {
       console.error('Error filtering range expenses:', error);
@@ -250,10 +249,10 @@ export function CalendarClient() {
             <CardDescription>
               {isRangeMode 
                 ? dateRange.from && dateRange.to 
-                  ? `${format(dateRange.from, 'PPP')} - ${format(dateRange.to, 'PPP')}`
+                  ? `${safeFormatDate(dateRange.from, 'PPP')} - ${safeFormatDate(dateRange.to, 'PPP')}`
                   : 'Select a date range to see summary'
                 : selectedDate 
-                  ? format(selectedDate, 'PPP')
+                  ? safeFormatDate(selectedDate, 'PPP')
                   : 'Select a date to see expenses'
               }
             </CardDescription>
@@ -280,7 +279,7 @@ export function CalendarClient() {
                                 <div>
                                   <p className="text-sm font-medium">{expense.description}</p>
                                   <p className="text-xs text-muted-foreground">
-                                    {format(parseISO(expense.date), 'MMM dd')} • {expense.category}
+                                    {safeFormatDate(expense.date, 'MMM dd')} • {expense.category}
                                   </p>
                                 </div>
                               </div>

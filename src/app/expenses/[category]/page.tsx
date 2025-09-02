@@ -10,7 +10,8 @@ import { formatCurrency } from '@/lib/utils';
 import { CategoryIcon } from '@/components/icons';
 import { CATEGORIES } from '@/lib/data';
 import { Skeleton } from '@/components/ui/skeleton';
-import { format, parseISO } from 'date-fns';
+import { format } from 'date-fns';
+import { compareDatesSafe } from '@/lib/date';
 
 export default function CategoryDetailPage() {
   const params = useParams();
@@ -24,7 +25,7 @@ export default function CategoryDetailPage() {
   const categoryExpenses = useMemo(() => {
     return expenses
       .filter(expense => expense.category === categoryName)
-      .sort((a, b) => parseISO(b.date).getTime() - parseISO(a.date).getTime());
+      .sort((a, b) => compareDatesSafe(a.date, b.date));
   }, [expenses, categoryName]);
 
   const totalSpent = useMemo(() => {

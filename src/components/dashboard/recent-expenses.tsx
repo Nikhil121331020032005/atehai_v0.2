@@ -11,7 +11,8 @@ import { formatCurrency } from '@/lib/utils';
 import { CategoryIcon } from '@/components/icons';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAppContext } from '@/context/app-context';
-import { format, parseISO, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
+import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
+import { parseDateSafe, safeFormatDate } from '@/lib/date';
 
 type RecentExpensesProps = {
   expenses: Expense[];
@@ -25,10 +26,11 @@ export function RecentExpenses({ expenses }: RecentExpensesProps) {
 
   const filteredExpenses = isSearchActive && (searchStartDate || searchEndDate)
     ? expenses.filter(expense => {
-        const expenseDate = parseISO(expense.date);
-        const start = searchStartDate ? startOfDay(parseISO(searchStartDate)) : null;
-        const end = searchEndDate ? endOfDay(parseISO(searchEndDate)) : null;
+        const expenseDate = parseDateSafe(expense.date);
+        const start = searchStartDate ? startOfDay(parseDateSafe(searchStartDate)!) : null;
+        const end = searchEndDate ? endOfDay(parseDateSafe(searchEndDate)!) : null;
         
+        if (!expenseDate) return false;
         if (start && end) {
           return isWithinInterval(expenseDate, { start, end });
         } else if (start) {
@@ -120,7 +122,7 @@ export function RecentExpenses({ expenses }: RecentExpensesProps) {
                   <div className="flex-1 space-y-1">
                     <p className="text-sm font-medium leading-none truncate">{expense.description}</p>
                     <p className="text-xs text-muted-foreground">
-                      {expense.category} • {format(parseISO(expense.date), 'MMM dd, yyyy')}
+                      {expense.category} • {safeFormatDate(expense.date, 'MMM dd, yyyy')}
                     </p>
                   </div>
                   <div className="font-medium text-right">{formatCurrency(expense.amount, currency)}</div>

@@ -31,6 +31,7 @@ import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useEffect, useState } from "react";
 import { format, parseISO } from "date-fns";
+import { safeFormatDate } from "@/lib/date";
 import { EditProfileDialog } from "@/components/profile/edit-profile-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
@@ -219,7 +220,7 @@ export default function ProfilePage() {
                                             onClick={() => loadArchivedData(month)}
                                             className="hover:bg-muted/50"
                                         >
-                                            {format(new Date(month + '-01'), 'MMMM yyyy')}
+                                            {safeFormatDate(month + '-01', 'MMMM yyyy')}
                                             {loadingArchivedData === month && (
                                                 <span className="text-xs text-muted-foreground ml-2">Loading...</span>
                                             )}
@@ -255,14 +256,14 @@ export default function ProfilePage() {
                                                     
                                                     <div className="pt-2 border-t">
                                                         <p className="text-xs text-muted-foreground">
-                                                            Data archived on {format(new Date(month + '-01'), 'MMMM yyyy')}
+                                                            Data archived on {safeFormatDate(month + '-01', 'MMMM yyyy')}
                                                         </p>
                                                     </div>
                                                 </div>
                                             ) : (
                                                 <div className="text-center py-4">
                                                     <p className="text-sm text-muted-foreground">
-                                                        Click to load archived data for {format(new Date(month + '-01'), 'MMMM yyyy')}
+                                                        Click to load archived data for {safeFormatDate(month + '-01', 'MMMM yyyy')}
                                                     </p>
                                                 </div>
                                             )}
