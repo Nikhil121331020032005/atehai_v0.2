@@ -69,6 +69,7 @@ interface AppContextType {
   resetMonthlyData: () => Promise<void>;
   upgradeToPremium: () => Promise<void>;
   getArchivedData: (month: string) => Promise<any>;
+  backfillArchive?: (month: string) => Promise<{ expenses: number; income: number }>;
   performAutomaticMonthlyReset: () => Promise<void>;
 }
 
@@ -572,6 +573,50 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     }
   });
 
+  const backfillArchive = requireAuth(async (month: string) => {
+    if (!user || !db) return { expenses: 0, income: 0 } as any;
+    if (!month || typeof month !== 'string' || !/^\d{4}-\d{2}$/.test(month)) {
+      toast({ variant: 'destructive', title: 'Invalid month', description: 'Use YYYY-MM format.' });
+      return { expenses: 0, income: 0 } as any;
+    }
+
+    const [expSnap, incSnap] = await Promise.all([
+      getDocs(collection(db, 'users', user.uid, 'expenses')),
+      getDocs(collection(db, 'users', user.uid, 'income')),
+    ]);
+
+    const start = parseISO(month + '-01');
+    const end = addMonths(start, 1);
+
+    const expensesForMonth: any[] = [];
+    expSnap.forEach(d => {
+      const e: any = d.data();
+      const dt = parseISO(String(e.date ?? ''));
+      if (isValid(dt) && dt >= start && dt < end) {
+        expensesForMonth.push({ ...e, id: d.id });
+      }
+    });
+
+    const incomeForMonth: any[] = [];
+    incSnap.forEach(d => {
+      const e: any = d.data();
+      const dt = parseISO(String(e.date ?? ''));
+      if (isValid(dt) && dt >= start && dt < end) {
+        incomeForMonth.push({ ...e, id: d.id });
+      }
+    });
+
+    const monthDocRef = doc(db, 'users', user.uid, 'monthlyArchives', month);
+    await setDoc(monthDocRef, {
+      expenses: expensesForMonth,
+      income: incomeForMonth,
+      createdAt: serverTimestamp(),
+    }, { merge: true });
+
+    toast({ title: 'Archive Backfilled', description: `${month}: ${expensesForMonth.length} expenses, ${incomeForMonth.length} income` });
+    return { expenses: expensesForMonth.length, income: incomeForMonth.length } as any;
+  });
+
 
   return (
     <AppContext.Provider value={{
@@ -615,6 +660,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       resetMonthlyData,
       upgradeToPremium,
       getArchivedData,
+      backfillArchive,
       performAutomaticMonthlyReset,
     }}>
       {children}
