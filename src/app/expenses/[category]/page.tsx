@@ -10,8 +10,7 @@ import { formatCurrency } from '@/lib/utils';
 import { CategoryIcon } from '@/components/icons';
 import { CATEGORIES } from '@/lib/data';
 import { Skeleton } from '@/components/ui/skeleton';
-import { format } from 'date-fns';
-import { compareDatesSafe } from '@/lib/date';
+import { compareDatesSafe, safeFormatDate } from '@/lib/date';
 
 export default function CategoryDetailPage() {
   const params = useParams();
@@ -98,7 +97,7 @@ export default function CategoryDetailPage() {
                   categoryExpenses.map(expense => (
                     <TableRow key={expense.id}>
                       <TableCell className="font-medium">{expense.description}</TableCell>
-                      <TableCell>{format(parseISO(expense.date), 'PPP')}</TableCell>
+                      <TableCell>{safeFormatDate(expense.date, 'PPP')}</TableCell>
                       <TableCell className="text-right">{formatCurrency(expense.amount, currency)}</TableCell>
                     </TableRow>
                   ))
