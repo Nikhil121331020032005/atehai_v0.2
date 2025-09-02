@@ -534,22 +534,37 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
         console.warn('Invalid month format for archive query:', month);
         return {};
       }
-      
+
+      // 1) Preferred: doc ID is the month key (YYYY-MM) and contains arrays directly
+      const monthDocRef = doc(db, 'users', user.uid, 'monthlyArchives', month);
+      const monthDocSnap = await getDoc(monthDocRef);
+      if (monthDocSnap.exists()) {
+        const data = monthDocSnap.data() as any;
+        const result: any = {};
+        if (Array.isArray(data.expenses)) result.expenses = data.expenses;
+        if (Array.isArray(data.income)) result.income = data.income;
+        if (Array.isArray(data.borrowLend)) result.borrowLend = data.borrowLend;
+        if (Array.isArray(data.assets)) result.assets = data.assets;
+        if (Array.isArray(data.liabilities)) result.liabilities = data.liabilities;
+        if (Object.keys(result).length > 0) return result;
+      }
+
+      // 2) Legacy/fallback: multiple docs with shape { month, collection, data: [] }
       const archiveQuery = query(collection(db, 'users', user.uid, 'monthlyArchives'), where('month', '==', month));
       const archiveSnapshot = await getDocs(archiveQuery);
-      
+
       const archivedData: any = {};
-      archiveSnapshot.docs.forEach(doc => {
+      archiveSnapshot.docs.forEach(d => {
         try {
-          const data = doc.data();
+          const data = d.data();
           if (data.collection && Array.isArray(data.data)) {
             archivedData[data.collection] = data.data;
           }
         } catch (error) {
-          console.warn('Error processing archived document:', doc.id, error);
+          console.warn('Error processing archived document:', d.id, error);
         }
       });
-      
+
       return archivedData;
     } catch (error) {
       console.error('Error getting archived data:', error);
