@@ -2,7 +2,6 @@
 
 import AppLayout from "@/components/app-layout";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/context/auth-context";
 import { useAppContext } from "@/context/app-context";
@@ -133,30 +132,6 @@ export default function ProfilePage() {
         }
     }
 
-    const [backfillMonth, setBackfillMonth] = useState<string>("");
-
-    const handleBackfill = async (month?: string) => {
-        try {
-            const target = month || backfillMonth || format(subMonths(new Date(), 1), 'yyyy-MM');
-            // backfillArchive is optional in context typing for safety
-            // @ts-ignore
-            if (typeof backfillArchive === 'function') {
-                // @ts-ignore
-                const res = await backfillArchive(target);
-                toast({ title: 'Archive Backfilled', description: `${target}: ${res.expenses} expenses, ${res.income} income` });
-                // refresh list
-                const archiveColRef = collection(db, 'users', user!.uid, 'monthlyArchives');
-                const snap = await getDocs(archiveColRef);
-                const months = snap.docs.map(doc => doc.id).sort((a, b) => b.localeCompare(a));
-                setArchivedMonths(months);
-            } else {
-                toast({ variant: 'destructive', title: 'Not available', description: 'Backfill is not available.' });
-            }
-        } catch (error) {
-            toast({ variant: 'destructive', title: 'Backfill Failed', description: 'Could not create archive for the selected month.' });
-            console.error(error);
-        }
-    }
 
     const loadArchivedData = async (month: string) => {
         if (archivedData[month]) return; // Already loaded
@@ -267,16 +242,8 @@ export default function ProfilePage() {
                                 <Info className="mr-2 h-4 w-4" /> About Us
                                </Link>
                             </Button>
-                            <div className="flex items-center gap-2">
-                              <Input
-                                type="month"
-                                value={backfillMonth}
-                                onChange={(e) => setBackfillMonth(e.target.value)}
-                                className="h-9 w-[170px]"
-                              />
-                              <Button onClick={() => handleBackfill()} variant="secondary">
-                                Backfill Month
-                              </Button>
+                            <div className="text-xs text-muted-foreground">
+                                Archived reports: Coming soon. We’re improving month-by-month history here.
                             </div>
                         </div>
                     </CardContent>
