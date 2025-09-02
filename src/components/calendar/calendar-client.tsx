@@ -32,8 +32,8 @@ export function CalendarClient() {
 
   // Filter out expenses with invalid dates and group by valid dates
   const expensesByDate = useMemo(() => {
-    const grouped: { [key: string]: Expense[] } = {};
-    expenses.forEach(expense => {
+      const grouped: { [key: string]: Expense[] } = {};
+      expenses.forEach(expense => {
       const parsedDate = parseDateSafe(expense.date);
       if (parsedDate) {
         const dateKey = formatDateKey(parsedDate);
@@ -42,15 +42,15 @@ export function CalendarClient() {
         }
         grouped[dateKey].push(expense);
       }
-    });
-    return grouped;
+      });
+      return grouped;
   }, [expenses]);
 
   const selectedDateExpenses = useMemo(() => {
     if (!selectedDate || isNaN(selectedDate.getTime())) return [];
     
     const dateKey = formatDateKey(selectedDate);
-    return expensesByDate[dateKey] || [];
+      return expensesByDate[dateKey] || [];
   }, [selectedDate, expensesByDate]);
 
   const rangeExpenses = useMemo(() => {
@@ -67,11 +67,11 @@ export function CalendarClient() {
   }, [isRangeMode, dateRange, expenses]);
 
   const rangeTotalAmount = useMemo(() => {
-    return rangeExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+      return rangeExpenses.reduce((sum, expense) => sum + expense.amount, 0);
   }, [rangeExpenses]);
 
   const selectedDateTotal = useMemo(() => {
-    return selectedDateExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+      return selectedDateExpenses.reduce((sum, expense) => sum + expense.amount, 0);
   }, [selectedDateExpenses]);
 
   const getDayExpenseTotal = (date: Date) => {
@@ -88,7 +88,7 @@ export function CalendarClient() {
   };
 
   const handleCalendarSelect = (value: Date | DateRange | undefined) => {
-    if (isRangeMode) {
+      if (isRangeMode) {
       if (!value) return;
       const maybeRange = value as DateRange | undefined;
       if (maybeRange && typeof maybeRange === 'object' && ('from' in (maybeRange as any) || 'to' in (maybeRange as any))) {
@@ -107,9 +107,9 @@ export function CalendarClient() {
   };
 
   const toggleMode = () => {
-    setIsRangeMode(!isRangeMode);
-    setDateRange({ from: undefined, to: undefined });
-    setSelectedDate(new Date());
+      setIsRangeMode(!isRangeMode);
+      setDateRange({ from: undefined, to: undefined });
+      setSelectedDate(new Date());
   };
 
   if (isLoading) {
@@ -159,7 +159,7 @@ export function CalendarClient() {
           </CardHeader>
           <CardContent>
             {isRangeMode ? (
-              <Calendar
+            <Calendar
                 mode="range"
                 selected={dateRange}
                 onSelect={handleCalendarSelect}
@@ -170,7 +170,7 @@ export function CalendarClient() {
                       if (!date || isNaN(date.getTime())) return false;
                       const dateKey = formatDateKey(date);
                       return (expensesByDate[dateKey]?.length || 0) > 0;
-                    } catch (error) {
+                } catch (error) {
                       return false;
                     }
                   }
@@ -188,26 +188,26 @@ export function CalendarClient() {
                 mode="single"
                 selected={selectedDate}
                 onSelect={handleCalendarSelect}
-                className="rounded-md border"
-                modifiers={{
-                  hasExpenses: (date) => {
-                    try {
+              className="rounded-md border"
+              modifiers={{
+                hasExpenses: (date) => {
+                  try {
                       if (!date || isNaN(date.getTime())) return false;
                       const dateKey = formatDateKey(date);
-                      return (expensesByDate[dateKey]?.length || 0) > 0;
-                    } catch (error) {
-                      return false;
-                    }
+                    return (expensesByDate[dateKey]?.length || 0) > 0;
+                  } catch (error) {
+                    return false;
                   }
-                }}
-                modifiersStyles={{
-                  hasExpenses: {
-                    backgroundColor: 'hsl(var(--primary))',
-                    color: 'hsl(var(--primary-foreground))',
-                    fontWeight: 'bold',
-                  }
-                }}
-              />
+                }
+              }}
+              modifiersStyles={{
+                hasExpenses: {
+                  backgroundColor: 'hsl(var(--primary))',
+                  color: 'hsl(var(--primary-foreground))',
+                  fontWeight: 'bold',
+                }
+              }}
+            />
             )}
             <div className="mt-4 text-xs text-muted-foreground">
               <div className="flex items-center gap-2">
@@ -248,18 +248,18 @@ export function CalendarClient() {
                     </div>
                     <div className="space-y-2 max-h-64 overflow-y-auto">
                       {rangeExpenses.map(expense => (
-                        <div key={expense.id} className="flex items-center justify-between p-2 border rounded">
-                          <div className="flex items-center gap-2">
-                            <CategoryIcon name={expense.category} className="h-4 w-4" />
-                            <div>
-                              <p className="text-sm font-medium">{expense.description}</p>
-                              <p className="text-xs text-muted-foreground">
+                            <div key={expense.id} className="flex items-center justify-between p-2 border rounded">
+                              <div className="flex items-center gap-2">
+                                <CategoryIcon name={expense.category} className="h-4 w-4" />
+                                <div>
+                                  <p className="text-sm font-medium">{expense.description}</p>
+                                  <p className="text-xs text-muted-foreground">
                                 {safeFormatDate(expense.date, 'MMM dd')} • {expense.category}
-                              </p>
+                                  </p>
+                                </div>
+                              </div>
+                              <span className="font-medium">{formatCurrency(expense.amount, currency)}</span>
                             </div>
-                          </div>
-                          <span className="font-medium">{formatCurrency(expense.amount, currency)}</span>
-                        </div>
                       ))}
                     </div>
                   </>
@@ -288,18 +288,18 @@ export function CalendarClient() {
                     </div>
                     <div className="space-y-2 max-h-64 overflow-y-auto">
                       {selectedDateExpenses.map(expense => (
-                        <div key={expense.id} className="flex items-center justify-between p-2 border rounded">
-                          <div className="flex items-center gap-2">
-                            <CategoryIcon name={expense.category} className="h-4 w-4" />
-                            <div>
-                              <p className="text-sm font-medium">{expense.description}</p>
-                              <Badge variant="outline" className="text-xs">
-                                {expense.category}
-                              </Badge>
+                            <div key={expense.id} className="flex items-center justify-between p-2 border rounded">
+                              <div className="flex items-center gap-2">
+                                <CategoryIcon name={expense.category} className="h-4 w-4" />
+                                <div>
+                                  <p className="text-sm font-medium">{expense.description}</p>
+                                  <Badge variant="outline" className="text-xs">
+                                    {expense.category}
+                                  </Badge>
+                                </div>
+                              </div>
+                              <span className="font-medium">{formatCurrency(expense.amount, currency)}</span>
                             </div>
-                          </div>
-                          <span className="font-medium">{formatCurrency(expense.amount, currency)}</span>
-                        </div>
                       ))}
                     </div>
                   </>
@@ -331,22 +331,22 @@ export function CalendarClient() {
           <CardContent>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {(() => {
-                const categoryTotals = rangeExpenses.reduce((acc, expense) => {
-                  acc[expense.category] = (acc[expense.category] || 0) + expense.amount;
-                  return acc;
-                }, {} as Record<string, number>);
-                
-                return Object.entries(categoryTotals)
-                  .sort(([,a], [,b]) => b - a)
-                  .map(([category, total]) => (
-                    <div key={category} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex items-center gap-2">
-                        <CategoryIcon name={category as any} className="h-5 w-5" />
-                        <span className="font-medium">{category}</span>
+                  const categoryTotals = rangeExpenses.reduce((acc, expense) => {
+                    acc[expense.category] = (acc[expense.category] || 0) + expense.amount;
+                    return acc;
+                  }, {} as Record<string, number>);
+                  
+                  return Object.entries(categoryTotals)
+                    .sort(([,a], [,b]) => b - a)
+                    .map(([category, total]) => (
+                      <div key={category} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <CategoryIcon name={category as any} className="h-5 w-5" />
+                          <span className="font-medium">{category}</span>
+                        </div>
+                        <span className="font-bold">{formatCurrency(total, currency)}</span>
                       </div>
-                      <span className="font-bold">{formatCurrency(total, currency)}</span>
-                    </div>
-                  ));
+                    ));
               })()}
             </div>
           </CardContent>

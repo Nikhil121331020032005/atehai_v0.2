@@ -130,7 +130,7 @@ export function RecentExpenses({ expenses }: RecentExpensesProps) {
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="font-medium text-right">{formatCurrency(expense.amount, currency)}</div>
+                  <div className="font-medium text-right">{formatCurrency(expense.amount, currency)}</div>
                     <Button
                       variant="ghost"
                       size="sm"

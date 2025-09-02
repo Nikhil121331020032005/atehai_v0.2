@@ -616,7 +616,6 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       resetMonthlyData,
       upgradeToPremium,
       getArchivedData,
-      backfillArchive,
       performAutomaticMonthlyReset,
     }}>
       {children}
