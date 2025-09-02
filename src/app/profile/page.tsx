@@ -29,18 +29,13 @@ import {
 import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useEffect, useState } from "react";
-<<<<<<< HEAD
-import { format, parseISO } from "date-fns";
-import { safeFormatDate } from "@/lib/date";
-=======
 import { format, parseISO, isValid } from "date-fns";
->>>>>>> 7493b07f0eeb95c84a2e2864cbfc6403f29244b6
 import { EditProfileDialog } from "@/components/profile/edit-profile-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 
 // Helper function to safely format dates
-const safeFormatDate = (dateString: string | null | undefined, formatStr: string): string => {
+const safeFormatDateLocal = (dateString: string | null | undefined, formatStr: string): string => {
   if (!dateString || typeof dateString !== 'string' || dateString.trim() === '') {
     return 'Unknown date';
   }
@@ -267,11 +262,7 @@ export default function ProfilePage() {
                                             onClick={() => loadArchivedData(month)}
                                             className="hover:bg-muted/50"
                                         >
-<<<<<<< HEAD
-                                            {safeFormatDate(month + '-01', 'MMMM yyyy')}
-=======
-                                            {safeFormatDate(month, 'MMMM yyyy')}
->>>>>>> 7493b07f0eeb95c84a2e2864cbfc6403f29244b6
+                                            {safeFormatDateLocal(month + '-01', 'MMMM yyyy')}
                                             {loadingArchivedData === month && (
                                                 <span className="text-xs text-muted-foreground ml-2">Loading...</span>
                                             )}
@@ -307,22 +298,14 @@ export default function ProfilePage() {
                                                     
                                                     <div className="pt-2 border-t">
                                                         <p className="text-xs text-muted-foreground">
-<<<<<<< HEAD
-                                                            Data archived on {safeFormatDate(month + '-01', 'MMMM yyyy')}
-=======
-                                                            Data archived on {safeFormatDate(month, 'MMMM yyyy')}
->>>>>>> 7493b07f0eeb95c84a2e2864cbfc6403f29244b6
+                                                            Data archived on {safeFormatDateLocal(month + '-01', 'MMMM yyyy')}
                                                         </p>
                                                     </div>
                                                 </div>
                                             ) : (
                                                 <div className="text-center py-4">
                                                     <p className="text-sm text-muted-foreground">
-<<<<<<< HEAD
-                                                        Click to load archived data for {safeFormatDate(month + '-01', 'MMMM yyyy')}
-=======
-                                                        Click to load archived data for {safeFormatDate(month, 'MMMM yyyy')}
->>>>>>> 7493b07f0eeb95c84a2e2864cbfc6403f29244b6
+                                                        Click to load archived data for {safeFormatDateLocal(month + '-01', 'MMMM yyyy')}
                                                     </p>
                                                 </div>
                                             )}

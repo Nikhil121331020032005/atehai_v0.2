@@ -8,44 +8,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { formatCurrency } from '@/lib/utils';
 import { CategoryIcon } from '@/components/icons';
-<<<<<<< HEAD
-import { format, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 import { safeFormatDate, parseDateSafe, isWithinIntervalSafe } from '@/lib/date';
-=======
-import { format, parseISO, isSameDay, isWithinInterval, startOfDay, endOfDay, isValid } from 'date-fns';
->>>>>>> 7493b07f0eeb95c84a2e2864cbfc6403f29244b6
 import { CalendarDays, Calculator } from 'lucide-react';
 import type { Expense } from '@/lib/types';
 
-// Helper function to safely parse and validate dates
-const safeParseDate = (dateString: string | null | undefined): Date | null => {
-  if (!dateString || typeof dateString !== 'string' || dateString.trim() === '') {
-    return null;
-  }
-  
-  try {
-    const parsed = parseISO(dateString);
-    return isValid(parsed) ? parsed : null;
-  } catch (error) {
-    console.warn('Failed to parse date:', dateString, error);
-    return null;
-  }
-};
-
-// Helper function to safely format dates
-const safeFormatDate = (dateString: string | null | undefined, formatStr: string): string => {
-  const date = safeParseDate(dateString);
-  if (!date) {
-    return 'Invalid Date';
-  }
-  
-  try {
-    return format(date, formatStr);
-  } catch (error) {
-    console.warn('Failed to format date:', dateString, error);
-    return 'Invalid Date';
-  }
-};
 
 export function CalendarClient() {
   const { expenses, currency, isLoading } = useAppContext();
@@ -59,9 +26,8 @@ export function CalendarClient() {
   // Filter out expenses with invalid dates and group by valid dates
   const expensesByDate = useMemo(() => {
     const grouped: { [key: string]: Expense[] } = {};
-    
     expenses.forEach(expense => {
-      const parsedDate = safeParseDate(expense.date);
+      const parsedDate = parseDateSafe(expense.date);
       if (parsedDate) {
         const dateKey = format(parsedDate, 'yyyy-MM-dd');
         if (!grouped[dateKey]) {
@@ -70,7 +36,6 @@ export function CalendarClient() {
         grouped[dateKey].push(expense);
       }
     });
-    
     return grouped;
   }, [expenses]);
 
@@ -83,34 +48,15 @@ export function CalendarClient() {
 
   const rangeExpenses = useMemo(() => {
     if (!isRangeMode || !dateRange.from || !dateRange.to) return [];
-    
-<<<<<<< HEAD
     try {
       return expenses.filter(expense => {
         const expenseDate = parseDateSafe(expense.date);
-        if (!expenseDate) return false; // ignore invalid records
+        if (!expenseDate) return false;
         return isWithinIntervalSafe(expenseDate, dateRange.from!, dateRange.to!);
       });
     } catch (error) {
-      console.error('Error filtering range expenses:', error);
       return [];
     }
-=======
-    return expenses.filter(expense => {
-      const expenseDate = safeParseDate(expense.date);
-      if (!expenseDate) return false;
-      
-      try {
-        return isWithinInterval(expenseDate, {
-          start: startOfDay(dateRange.from!),
-          end: endOfDay(dateRange.to!),
-        });
-      } catch (error) {
-        console.warn('Error checking date interval:', error);
-        return false;
-      }
-    });
->>>>>>> 7493b07f0eeb95c84a2e2864cbfc6403f29244b6
   }, [isRangeMode, dateRange, expenses]);
 
   const rangeTotalAmount = useMemo(() => {
@@ -266,22 +212,6 @@ export function CalendarClient() {
                       </p>
                     </div>
                     <div className="space-y-2 max-h-64 overflow-y-auto">
-<<<<<<< HEAD
-                      {(() => {
-                        try {
-                          return rangeExpenses.map(expense => (
-                            <div key={expense.id} className="flex items-center justify-between p-2 border rounded">
-                              <div className="flex items-center gap-2">
-                                <CategoryIcon name={expense.category} className="h-4 w-4" />
-                                <div>
-                                  <p className="text-sm font-medium">{expense.description}</p>
-                                  <p className="text-xs text-muted-foreground">
-                                    {safeFormatDate(expense.date, 'MMM dd')} • {expense.category}
-                                  </p>
-                                </div>
-                              </div>
-                              <span className="font-medium">{formatCurrency(expense.amount, currency)}</span>
-=======
                       {rangeExpenses.map(expense => (
                         <div key={expense.id} className="flex items-center justify-between p-2 border rounded">
                           <div className="flex items-center gap-2">
@@ -291,7 +221,6 @@ export function CalendarClient() {
                               <p className="text-xs text-muted-foreground">
                                 {safeFormatDate(expense.date, 'MMM dd')} • {expense.category}
                               </p>
->>>>>>> 7493b07f0eeb95c84a2e2864cbfc6403f29244b6
                             </div>
                           </div>
                           <span className="font-medium">{formatCurrency(expense.amount, currency)}</span>
