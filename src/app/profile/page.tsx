@@ -242,9 +242,6 @@ export default function ProfilePage() {
                                 <Info className="mr-2 h-4 w-4" /> About Us
                                </Link>
                             </Button>
-                            <div className="text-xs text-muted-foreground">
-                                Archived reports: Coming soon. We’re improving month-by-month history here.
-                            </div>
                         </div>
                     </CardContent>
                 </Card>
@@ -254,9 +251,25 @@ export default function ProfilePage() {
                         <CardTitle className="flex items-center gap-2">
                            <FileClock className="h-5 w-5" /> Archived Reports
                         </CardTitle>
-                        <CardDescription>Access your past monthly expense records.</CardDescription>
+                        <CardDescription>
+                            We're currently enhancing this feature to provide comprehensive monthly financial reports. 
+                            Our team is working diligently to deliver detailed insights and analytics for your historical data. 
+                            This advanced reporting system will be available soon.
+                        </CardDescription>
                     </CardHeader>
                     <CardContent>
+                        <div className="text-center py-8 space-y-4">
+                            <div className="mx-auto w-16 h-16 bg-muted rounded-full flex items-center justify-center">
+                                <FileClock className="h-8 w-8 text-muted-foreground" />
+                            </div>
+                            <div className="space-y-2">
+                                <h3 className="font-semibold text-lg">Feature Under Development</h3>
+                                <p className="text-muted-foreground max-w-md mx-auto">
+                                    We're building an advanced reporting system that will provide detailed monthly breakdowns, 
+                                    trend analysis, and comprehensive financial insights. Stay tuned for this exciting update!
+                                </p>
+                            </div>
+                        </div>
                         <Accordion type="single" collapsible className="w-full">
                             {archivedMonths.length > 0 ? (
                                 archivedMonths.map(month => (
