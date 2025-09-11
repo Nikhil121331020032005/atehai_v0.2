@@ -94,9 +94,12 @@ export function SpendingChart({ expenses }: SpendingChartProps) {
                 labelStyle={{
                   color: 'hsl(var(--foreground))',
                 }}
+<<<<<<< HEAD
                 itemStyle={{
                   color: 'hsl(var(--foreground))',
                 }}
+=======
+>>>>>>> origin/main
                 formatter={(value: number) => [formatCurrency(value, currency), 'Total Spent']}
               />
               <Bar dataKey="total" radius={[0, 4, 4, 0]} onClick={handleBarClick} className="cursor-pointer">
