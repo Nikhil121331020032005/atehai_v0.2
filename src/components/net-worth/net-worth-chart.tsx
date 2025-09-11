@@ -70,6 +70,12 @@ export function NetWorthChart({ assets, liabilities }: NetWorthChartProps) {
                 borderRadius: 'var(--radius)',
                 color: 'hsl(var(--foreground))',
               }}
+              labelStyle={{
+                color: 'hsl(var(--foreground))',
+              }}
+              itemStyle={{
+                color: 'hsl(var(--foreground))',
+              }}
               formatter={(value: number, name: string) => [
                 formatCurrency(value, currency), 
                 name === 'netWorth' ? 'Net Worth' : name.charAt(0).toUpperCase() + name.slice(1)

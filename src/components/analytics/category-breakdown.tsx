@@ -108,6 +108,12 @@ export function CategoryBreakdown({ expenses, isLoading }: CategoryBreakdownProp
                     borderRadius: 'var(--radius)',
                     color: 'hsl(var(--foreground))',
                   }}
+                  labelStyle={{
+                    color: 'hsl(var(--foreground))',
+                  }}
+                  itemStyle={{
+                    color: 'hsl(var(--foreground))',
+                  }}
                 />
               </PieChart>
             </ResponsiveContainer>
