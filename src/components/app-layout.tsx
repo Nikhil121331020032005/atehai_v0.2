@@ -44,10 +44,12 @@ export default function AppLayout({ children, pageTitle }: { children: React.Rea
     <SidebarProvider>
       <Sidebar>
         <SidebarHeader>
-          <Logo />
+          <div className="p-2">
+            <Logo />
+          </div>
         </SidebarHeader>
         <SidebarContent>
-          <SidebarMenu>
+          <SidebarMenu className="px-2">
             <SidebarMenuItem>
               <SidebarMenuButton asChild isActive={pathname === '/'}>
                 <Link href="/">
@@ -123,12 +125,12 @@ export default function AppLayout({ children, pageTitle }: { children: React.Rea
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter>
-            <SidebarMenu>
+            <SidebarMenu className="px-2">
                 {!profile?.isPremium && (
                  <SidebarMenuItem>
                     <SidebarMenuButton asChild isActive={pathname === '/subscription'}>
                         <Link href="/subscription">
-                            <Gem />
+                            <Gem className="text-yellow-500" />
                             Go Premium
                         </Link>
                     </SidebarMenuButton>
