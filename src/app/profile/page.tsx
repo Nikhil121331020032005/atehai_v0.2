@@ -82,6 +82,7 @@ export default function ProfilePage() {
     const { toast } = useToast();
     const [archivedMonths, setArchivedMonths] = useState<string[]>([]);
     const [archivedData, setArchivedData] = useState<{[key: string]: any}>({});
+    const [defaultOpenMonth, setDefaultOpenMonth] = useState<string | undefined>(undefined);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [isResetting, setIsResetting] = useState(false);
     const [loadingArchivedData, setLoadingArchivedData] = useState<string | null>(null);
@@ -95,6 +96,9 @@ export default function ProfilePage() {
                         .map(doc => doc.id)
                         .sort((a, b) => b.localeCompare(a));
                     setArchivedMonths(months);
+                    if (months.length > 0) {
+                        setDefaultOpenMonth(prev => prev ?? months[0]);
+                    }
                 }, (error) => {
                     console.error('Error fetching archived months:', error);
                     setArchivedMonths([]);
@@ -147,6 +151,17 @@ export default function ProfilePage() {
             setLoadingArchivedData(null);
         }
     }
+
+    // Auto-load the most recent archived month (if available)
+    useEffect(() => {
+        if (archivedMonths.length > 0) {
+            const mostRecent = archivedMonths[0];
+            if (mostRecent && !archivedData[mostRecent]) {
+                loadArchivedData(mostRecent);
+            }
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [archivedMonths]);
 
     if (isLoading || !profile) {
         return (
@@ -252,9 +267,7 @@ export default function ProfilePage() {
                            <FileClock className="h-5 w-5" /> Archived Reports
                         </CardTitle>
                         <CardDescription>
-                            We're currently enhancing this feature to provide comprehensive monthly financial reports. 
-                            Our team is working diligently to deliver detailed insights and analytics for your historical data. 
-                            This advanced reporting system will be available soon.
+                            View your archived monthly data. The most recent month expands automatically and shows your real totals.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -270,7 +283,7 @@ export default function ProfilePage() {
                                 </p>
                             </div>
                         </div>
-                        <Accordion type="single" collapsible className="w-full">
+                        <Accordion type="single" collapsible className="w-full" defaultValue={defaultOpenMonth}>
                             {archivedMonths.length > 0 ? (
                                 archivedMonths.map(month => (
                                     <AccordionItem key={month} value={month}>
@@ -314,7 +327,7 @@ export default function ProfilePage() {
                                                     
                                                     <div className="pt-2 border-t">
                                                         <p className="text-xs text-muted-foreground">
-                                                            Data archived on {safeFormatDateLocal(month + '-01', 'MMMM yyyy')}
+                                                            Data for {safeFormatDateLocal(month + '-01', 'MMMM yyyy')}
                                                         </p>
                                                     </div>
                                                 </div>
