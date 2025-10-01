@@ -92,9 +92,24 @@ export default function ProfilePage() {
             try {
                 const archiveColRef = collection(db, 'users', user.uid, 'monthlyArchives');
                 const unsubscribe = onSnapshot(archiveColRef, (snapshot) => {
-                    const months = snapshot.docs
-                        .map(doc => doc.id)
-                        .sort((a, b) => b.localeCompare(a));
+                    // Support both archive shapes:
+                    // A) Doc ID is 'YYYY-MM'
+                    // B) Multiple docs with a 'month' field equal to 'YYYY-MM'
+                    const monthSet = new Set<string>();
+                    snapshot.docs.forEach((d: any) => {
+                        const id: string = d?.id;
+                        if (typeof id === 'string' && /^\d{4}-\d{2}$/.test(id)) {
+                            monthSet.add(id);
+                            return;
+                        }
+                        const data = typeof d.data === 'function' ? d.data() : undefined;
+                        const monthField = data?.month;
+                        if (typeof monthField === 'string' && /^\d{4}-\d{2}$/.test(monthField)) {
+                            monthSet.add(monthField);
+                        }
+                    });
+
+                    const months = Array.from(monthSet).sort((a, b) => b.localeCompare(a));
                     setArchivedMonths(months);
                     if (months.length > 0) {
                         setDefaultOpenMonth(prev => prev ?? months[0]);
@@ -271,18 +286,19 @@ export default function ProfilePage() {
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-center py-8 space-y-4">
-                            <div className="mx-auto w-16 h-16 bg-muted rounded-full flex items-center justify-center">
-                                <FileClock className="h-8 w-8 text-muted-foreground" />
-                            </div>
-                            <div className="space-y-2">
-                                <h3 className="font-semibold text-lg">Feature Under Development</h3>
-                                <p className="text-muted-foreground max-w-md mx-auto">
-                                    We're building an advanced reporting system that will provide detailed monthly breakdowns, 
-                                    trend analysis, and comprehensive financial insights. Stay tuned for this exciting update!
-                                </p>
-                            </div>
-                        </div>
+                        {archivedMonths.length === 0 && (
+                          <div className="text-center py-8 space-y-4">
+                              <div className="mx-auto w-16 h-16 bg-muted rounded-full flex items-center justify-center">
+                                  <FileClock className="h-8 w-8 text-muted-foreground" />
+                              </div>
+                              <div className="space-y-2">
+                                  <h3 className="font-semibold text-lg">No archived months yet</h3>
+                                  <p className="text-muted-foreground max-w-md mx-auto">
+                                      When your month ends or you reset data, we archive that month's records here.
+                                  </p>
+                              </div>
+                          </div>
+                        )}
                         <Accordion type="single" collapsible className="w-full" defaultValue={defaultOpenMonth}>
                             {archivedMonths.length > 0 ? (
                                 archivedMonths.map(month => (
