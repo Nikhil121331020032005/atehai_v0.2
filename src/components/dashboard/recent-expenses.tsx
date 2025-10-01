@@ -12,7 +12,7 @@ import { CategoryIcon } from '@/components/icons';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAppContext } from '@/context/app-context';
 import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
-import { parseDateSafe, safeFormatDate } from '@/lib/date';
+import { parseDateSafe, safeFormatDate, compareDatesSafe } from '@/lib/date';
 
 type RecentExpensesProps = {
   expenses: Expense[];
@@ -27,7 +27,8 @@ export function RecentExpenses({ expenses }: RecentExpensesProps) {
   // Filter out expenses with invalid dates first
   const validExpenses = expenses.filter(expense => parseDateSafe(expense.date) !== null);
 
-  const filteredExpenses = isSearchActive && (searchStartDate || searchEndDate)
+  // Build base list (filtered when search is active), then sort by newest first
+  const baseExpenses = isSearchActive && (searchStartDate || searchEndDate)
     ? validExpenses.filter(expense => {
         const expenseDate = parseDateSafe(expense.date);
         if (!expenseDate) return false;
@@ -44,7 +45,10 @@ export function RecentExpenses({ expenses }: RecentExpensesProps) {
         }
         return true;
       })
-    : validExpenses.slice(0, 10);
+    : validExpenses;
+
+  const sortedExpenses = baseExpenses.sort((a, b) => compareDatesSafe(a.date, b.date));
+  const filteredExpenses = isSearchActive ? sortedExpenses : sortedExpenses.slice(0, 10);
 
   const handleSearch = () => {
     setIsSearchActive(true);

@@ -7,6 +7,7 @@ import { Landmark } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAppContext } from '@/context/app-context';
 import { format, parseISO } from 'date-fns';
+import { compareDatesSafe } from '@/lib/date';
 
 type RecentIncomeProps = {
   income: Income[];
@@ -14,7 +15,10 @@ type RecentIncomeProps = {
 
 export function RecentIncome({ income }: RecentIncomeProps) {
   const { currency } = useAppContext();
-  const recentIncome = income.slice(0, 10);
+  const recentIncome = income
+    .slice()
+    .sort((a, b) => compareDatesSafe(a.date, b.date))
+    .slice(0, 10);
 
   return (
     <Card className="h-full">
