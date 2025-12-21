@@ -9,7 +9,7 @@
  */
 
 import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import {z} from 'zod';
 
 const SuggestCategoryInputSchema = z.object({
   description: z.string().describe('The description of the expense.'),

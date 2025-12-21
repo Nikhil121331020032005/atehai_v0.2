@@ -24,27 +24,33 @@ const publicRoutes = ['/login', '/signup'];
 
 const createInitialUserData = async (user: User) => {
     if (!db) return; 
-    const userDocRef = doc(db, 'users', user.uid);
-    const userDoc = await getDoc(userDocRef);
+    
+    try {
+        const userDocRef = doc(db, 'users', user.uid);
+        const userDoc = await getDoc(userDocRef);
 
-    if (!userDoc.exists()) {
-        const batch = writeBatch(db);
-        
-        batch.set(userDocRef, {
-            email: user.email,
-            createdAt: new Date().toISOString(),
-            currency: 'USD',
-            isPremium: false,
-            resetsThisMonth: 0,
-        });
+        if (!userDoc.exists()) {
+            const batch = writeBatch(db);
+            
+            batch.set(userDocRef, {
+                email: user.email,
+                createdAt: new Date().toISOString(),
+                currency: 'USD',
+                isPremium: false,
+                resetsThisMonth: 0,
+            });
 
-        const budgetsColRef = collection(userDocRef, 'budgets');
-        CATEGORIES.forEach(category => {
-            const newBudgetRef = doc(budgetsColRef);
-            batch.set(newBudgetRef, { category: category.name, amount: 0 });
-        });
+            const budgetsColRef = collection(userDocRef, 'budgets');
+            CATEGORIES.forEach(category => {
+                const newBudgetRef = doc(budgetsColRef);
+                batch.set(newBudgetRef, { category: category.name, amount: 0 });
+            });
 
-        await batch.commit();
+            await batch.commit();
+        }
+    } catch (error) {
+        console.error('Error creating initial user data:', error);
+        // Don't throw - allow user to continue even if initial setup fails
     }
 }
 

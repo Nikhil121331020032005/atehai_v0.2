@@ -28,12 +28,24 @@ if (
   firebaseConfig.projectId
 ) {
   try {
-    app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+    // Initialize Firebase app (singleton pattern)
+    if (getApps().length === 0) {
+      app = initializeApp(firebaseConfig);
+    } else {
+      app = getApp();
+    }
+    
+    // Initialize services
     auth = getAuth(app);
     db = getFirestore(app);
     storage = getStorage(app);
   } catch (e) {
     console.error("Failed to initialize Firebase", e);
+    // Set to null to prevent further initialization attempts
+    app = null;
+    auth = null;
+    db = null;
+    storage = null;
   }
 } else {
   console.warn("Firebase config is missing or incomplete. Firebase services will be disabled.");

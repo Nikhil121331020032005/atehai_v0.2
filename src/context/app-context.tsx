@@ -158,31 +158,46 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
 
     const newUnsubscribes = dataCollections.map(col => {
       const colRef = collection(db, 'users', user.uid, col);
-      return onSnapshot(colRef, snapshot => {
-        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any[];
-        setters[col](data);
-      });
+      return onSnapshot(
+        colRef, 
+        snapshot => {
+          const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any[];
+          setters[col](data);
+        },
+        error => {
+          console.error(`Error listening to ${col} collection:`, error);
+          // Set empty array on error to prevent stale data
+          setters[col]([]);
+        }
+      );
     });
 
-    const userProfileUnsubscribe = onSnapshot(doc(db, 'users', user.uid), (doc) => {
-      const data = doc.data();
-      if (data) {
-        setCurrency(data.currency || 'USD');
-        setProfile({
-          email: user.email || '',
-          name: data.name,
-          age: data.age,
-          gender: data.gender,
-          avatarUrl: data.avatarUrl,
-          isPremium: true,
-          resetsThisMonth: data.resetsThisMonth || 0,
-          subscriptionEndDate: data.subscriptionEndDate,
-          dashboardWidgets: data.dashboardWidgets || DEFAULT_WIDGETS,
-        })
-        setDashboardWidgets(data.dashboardWidgets || DEFAULT_WIDGETS);
+    const userProfileUnsubscribe = onSnapshot(
+      doc(db, 'users', user.uid), 
+      (docSnapshot) => {
+        const data = docSnapshot.data();
+        if (data) {
+          setCurrency(data.currency || 'USD');
+          setProfile({
+            email: user.email || '',
+            name: data.name,
+            age: data.age,
+            gender: data.gender,
+            avatarUrl: data.avatarUrl,
+            isPremium: true,
+            resetsThisMonth: data.resetsThisMonth || 0,
+            subscriptionEndDate: data.subscriptionEndDate,
+            dashboardWidgets: data.dashboardWidgets || DEFAULT_WIDGETS,
+          })
+          setDashboardWidgets(data.dashboardWidgets || DEFAULT_WIDGETS);
+        }
+        setIsDataLoading(false);
+      },
+      (error) => {
+        console.error('Error listening to user profile:', error);
+        setIsDataLoading(false);
       }
-      setIsDataLoading(false);
-    });
+    );
     
     newUnsubscribes.push(userProfileUnsubscribe);
     unsubscribes.current = newUnsubscribes;
