@@ -39,7 +39,6 @@ import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/context/app-context';
 import { CATEGORIES } from '@/lib/data';
 import { cn } from '@/lib/utils';
-import { suggestCategoryAction } from '@/lib/actions';
 import type { CategoryName } from '@/lib/types';
 
 const expenseSchema = z.object({
@@ -81,12 +80,34 @@ export function AddExpenseDialog({ isOpen, onOpenChange }: AddExpenseDialogProps
       return;
     }
     startTransition(async () => {
-      const result = await suggestCategoryAction(description);
-      if (result.category) {
-        form.setValue('category', result.category, { shouldValidate: true });
-        toast({ title: 'Category Suggested!', description: `We've selected "${result.category}" for you.` });
-      } else {
-        toast({ variant: 'destructive', title: 'Suggestion Failed', description: result.error });
+      try {
+        const response = await fetch('/api/suggest-category', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ description }),
+        });
+
+        const result = await response.json();
+        
+        if (result.category) {
+          form.setValue('category', result.category, { shouldValidate: true });
+          toast({ title: 'Category Suggested!', description: `We've selected "${result.category}" for you.` });
+        } else {
+          toast({ 
+            variant: 'destructive', 
+            title: 'Suggestion Failed', 
+            description: result.error || 'Failed to suggest a category. Please select one manually.' 
+          });
+        }
+      } catch (error) {
+        console.error('Error calling suggest-category API:', error);
+        toast({ 
+          variant: 'destructive', 
+          title: 'Suggestion Failed', 
+          description: 'Failed to connect to AI service. Please select a category manually.' 
+        });
       }
     });
   };
