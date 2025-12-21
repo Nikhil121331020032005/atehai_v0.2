@@ -21,30 +21,46 @@ const SuggestCategoryOutputSchema = z.object({
 });
 export type SuggestCategoryOutput = z.infer<typeof SuggestCategoryOutputSchema>;
 
-export async function suggestCategory(input: SuggestCategoryInput): Promise<SuggestCategoryOutput> {
-  return suggestCategoryFlow(input);
-}
+// Check if Genkit is initialized (has definePrompt method)
+// ai will be null if GEMINI_API_KEY is missing
+const isGenkitInitialized = ai !== null && typeof ai.definePrompt === 'function';
 
-const prompt = ai.definePrompt({
-  name: 'suggestCategoryPrompt',
-  input: {schema: SuggestCategoryInputSchema},
-  output: {schema: SuggestCategoryOutputSchema},
-  prompt: `Given the following expense description, suggest a relevant expense category.
+let prompt: any = null;
+let suggestCategoryFlow: any = null;
+
+if (isGenkitInitialized && ai) {
+  try {
+    prompt = ai.definePrompt({
+      name: 'suggestCategoryPrompt',
+      input: {schema: SuggestCategoryInputSchema},
+      output: {schema: SuggestCategoryOutputSchema},
+      prompt: `Given the following expense description, suggest a relevant expense category.
 Description: {{{description}}}
 
 Possible categories: Groceries, Utilities, Rent, Transportation, Entertainment, Dining, Shopping, Travel, Education, Healthcare, Insurance, Personal Care, Investments, Other
 
 Suggest one of the categories above, and nothing else.`,
-});
+    });
 
-const suggestCategoryFlow = ai.defineFlow(
-  {
-    name: 'suggestCategoryFlow',
-    inputSchema: SuggestCategoryInputSchema,
-    outputSchema: SuggestCategoryOutputSchema,
-  },
-  async input => {
-    const {output} = await prompt(input);
-    return output!;
+    suggestCategoryFlow = ai!.defineFlow(
+      {
+        name: 'suggestCategoryFlow',
+        inputSchema: SuggestCategoryInputSchema,
+        outputSchema: SuggestCategoryOutputSchema,
+      },
+      async (input: SuggestCategoryInput) => {
+        const {output} = await prompt(input);
+        return output!;
+      }
+    );
+  } catch (error) {
+    console.warn('[suggest-category] Failed to initialize Genkit flow:', error);
   }
-);
+}
+
+export async function suggestCategory(input: SuggestCategoryInput): Promise<SuggestCategoryOutput> {
+  if (!isGenkitInitialized || !suggestCategoryFlow) {
+    throw new Error('AI service is not configured. GEMINI_API_KEY is missing.');
+  }
+  return suggestCategoryFlow(input);
+}

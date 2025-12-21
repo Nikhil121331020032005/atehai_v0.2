@@ -21,13 +21,13 @@ export async function POST(request: NextRequest) {
   try {
     // Verify API key is available (safe check without exposing key)
     if (!process.env.GEMINI_API_KEY) {
-      console.error('[API] GEMINI_API_KEY is missing');
+      console.warn('[API] GEMINI_API_KEY env var missing, AI feature disabled');
       return NextResponse.json(
         { 
           category: null, 
-          error: 'AI service is not configured. Please contact support.' 
+          error: 'AI service is not configured. Please select a category manually.' 
         },
-        { status: 500 }
+        { status: 503 }
       );
     }
 
@@ -71,7 +71,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ category: 'Other' });
 
   } catch (error) {
-    console.error('[API] Error in suggest-category:', error);
+    // Log error details server-side, but return user-friendly message
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.warn('[API] Error in suggest-category:', errorMessage);
     
     // Return user-friendly error without exposing internal details
     return NextResponse.json(

@@ -22,11 +22,15 @@ let db: Firestore | null = null;
 let storage: FirebaseStorage | null = null;
 
 // Check if all required environment variables are present before initializing
-if (
+// Required: apiKey, authDomain, projectId, appId
+const hasRequiredConfig = !!(
   firebaseConfig.apiKey &&
   firebaseConfig.authDomain &&
-  firebaseConfig.projectId
-) {
+  firebaseConfig.projectId &&
+  firebaseConfig.appId
+);
+
+if (hasRequiredConfig) {
   try {
     // Initialize Firebase app (singleton pattern)
     if (getApps().length === 0) {
@@ -40,7 +44,7 @@ if (
     db = getFirestore(app);
     storage = getStorage(app);
   } catch (e) {
-    console.error("Failed to initialize Firebase", e);
+    console.warn("[Firebase] Failed to initialize Firebase:", e);
     // Set to null to prevent further initialization attempts
     app = null;
     auth = null;
@@ -48,7 +52,14 @@ if (
     storage = null;
   }
 } else {
-  console.warn("Firebase config is missing or incomplete. Firebase services will be disabled.");
+  // Log which env vars are missing (for debugging, not errors)
+  const missing: string[] = [];
+  if (!firebaseConfig.apiKey) missing.push('NEXT_PUBLIC_FIREBASE_API_KEY');
+  if (!firebaseConfig.authDomain) missing.push('NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN');
+  if (!firebaseConfig.projectId) missing.push('NEXT_PUBLIC_FIREBASE_PROJECT_ID');
+  if (!firebaseConfig.appId) missing.push('NEXT_PUBLIC_FIREBASE_APP_ID');
+  
+  console.warn(`[Firebase] Firebase env vars missing (${missing.join(', ')}), skipping init. Firebase services will be disabled.`);
 }
 
 export { app, auth, db, storage };
