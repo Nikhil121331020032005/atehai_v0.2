@@ -16,7 +16,7 @@ const apiKey = process.env.GEMINI_API_KEY;
 let aiInstance: ReturnType<typeof genkit> | null = null;
 
 if (!apiKey) {
-  console.warn('[Genkit] GEMINI_API_KEY env var missing, Genkit AI features will be disabled');
+  console.warn('[Genkit] Missing GEMINI_API_KEY - AI features will be disabled');
 } else {
   // Safe logging: only show that key exists and its length, never the actual key
   console.log('[Genkit] API key loaded successfully (length:', apiKey.length, 'chars)');

@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
   try {
     // Verify API key is available (safe check without exposing key)
     if (!process.env.GEMINI_API_KEY) {
-      console.warn('[API] GEMINI_API_KEY env var missing, AI feature disabled');
+      console.warn('[API] Missing GEMINI_API_KEY - AI feature disabled');
       return NextResponse.json(
         { 
           category: null, 

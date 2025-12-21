@@ -22,7 +22,7 @@ export async function suggestCategoryAction(description: string): Promise<{ cate
     console.warn(`AI suggested an invalid category: "${result.category}". Falling back to 'Other'.`);
     return { category: 'Other' };
   } catch (error) {
-    console.error('Error suggesting category:', error);
+    console.warn('[suggestCategoryAction] Error suggesting category:', error);
     return { category: null, error: 'Failed to suggest a category. Please select one manually.' };
   }
 }

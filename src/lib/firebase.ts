@@ -59,7 +59,7 @@ if (hasRequiredConfig) {
   if (!firebaseConfig.projectId) missing.push('NEXT_PUBLIC_FIREBASE_PROJECT_ID');
   if (!firebaseConfig.appId) missing.push('NEXT_PUBLIC_FIREBASE_APP_ID');
   
-  console.warn(`[Firebase] Firebase env vars missing (${missing.join(', ')}), skipping init. Firebase services will be disabled.`);
+  console.warn(`[Firebase] Firebase env vars not found (${missing.join(', ')}), skipping init. Firebase services will be disabled.`);
 }
 
 export { app, auth, db, storage };

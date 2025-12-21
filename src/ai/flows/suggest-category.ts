@@ -54,8 +54,12 @@ Suggest one of the categories above, and nothing else.`,
       }
     );
   } catch (error) {
-    console.warn('[suggest-category] Failed to initialize Genkit flow:', error);
+    console.warn('[suggest-category] Failed to initialize Genkit flow - AI feature disabled:', error);
+    prompt = null;
+    suggestCategoryFlow = null;
   }
+} else {
+  console.warn('[suggest-category] Genkit not initialized - Missing GEMINI_API_KEY');
 }
 
 export async function suggestCategory(input: SuggestCategoryInput): Promise<SuggestCategoryOutput> {
