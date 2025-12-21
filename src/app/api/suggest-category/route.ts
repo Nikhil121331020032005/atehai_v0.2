@@ -58,7 +58,47 @@ export async function POST(request: NextRequest) {
     }
 
     // Call the Genkit flow (server-side only)
-    const result = await suggestCategory({ description });
+    let result;
+    try {
+      result = await suggestCategory({ description });
+    } catch (genkitError) {
+      // Handle Genkit-specific errors
+      const genkitErrorMessage = genkitError instanceof Error ? genkitError.message : 'Unknown Genkit error';
+      const genkitErrorString = String(genkitError);
+      
+      console.warn('[API] Genkit flow error:', genkitErrorMessage);
+      
+      // Check for quota/rate limit errors
+      if (genkitErrorMessage.includes('429') || 
+          genkitErrorMessage.includes('quota') || 
+          genkitErrorMessage.includes('rate limit') ||
+          genkitErrorString.includes('Quota exceeded') ||
+          genkitErrorString.includes('Too Many Requests')) {
+        console.warn('[API] Gemini API quota/rate limit exceeded');
+        return NextResponse.json(
+          { 
+            category: null, 
+            error: 'AI service is temporarily unavailable due to high demand. Please select a category manually.' 
+          },
+          { status: 503 }
+        );
+      }
+      
+      // If it's a configuration error, return 503
+      if (genkitErrorMessage.includes('not configured') || genkitErrorMessage.includes('GEMINI_API_KEY')) {
+        return NextResponse.json(
+          { 
+            category: null, 
+            error: 'AI service is not configured. Please select a category manually.' 
+          },
+          { status: 503 }
+        );
+      }
+      
+      // Re-throw to be caught by outer catch block
+      throw genkitError;
+    }
+    
     const suggestedCategory = result.category as CategoryName;
 
     // Validate the suggested category
@@ -71,9 +111,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ category: 'Other' });
 
   } catch (error) {
-    // Log error details server-side, but return user-friendly message
+    // Log error details server-side for debugging
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.warn('[API] Error in suggest-category:', errorMessage);
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    console.error('[API] Error in suggest-category:', {
+      message: errorMessage,
+      stack: errorStack,
+      // Don't log the full error object as it might contain sensitive info
+    });
     
     // Return user-friendly error without exposing internal details
     return NextResponse.json(

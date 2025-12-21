@@ -23,16 +23,24 @@ if (!apiKey) {
   
   try {
     // Initialize Genkit only if API key is present
+    // Note: Genkit should work in serverless environments, but we handle errors gracefully
     aiInstance = genkit({
       plugins: [
         googleAI({
           apiKey: apiKey,
         }),
       ],
-      model: 'googleai/gemini-2.0-flash',
+      model: 'googleai/gemini-1.5-flash', // Using 1.5-flash for better free tier compatibility
     });
+    
+    // Verify that the instance has the required methods
+    if (!aiInstance || typeof aiInstance.definePrompt !== 'function') {
+      console.warn('[Genkit] Genkit instance created but missing required methods');
+      aiInstance = null;
+    }
   } catch (error) {
-    console.warn('[Genkit] Failed to initialize Genkit:', error);
+    const errorDetails = error instanceof Error ? error.message : String(error);
+    console.warn('[Genkit] Failed to initialize Genkit:', errorDetails);
     aiInstance = null;
   }
 }
