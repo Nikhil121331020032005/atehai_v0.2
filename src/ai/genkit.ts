@@ -30,7 +30,7 @@ if (!apiKey) {
           apiKey: apiKey,
         }),
       ],
-      model: 'googleai/gemini-1.5-flash', // Using 1.5-flash for better free tier compatibility
+      model: 'googleai/gemini-2.5-flash', // Using 1.5-flash for better free tier compatibility
     });
     
     // Verify that the instance has the required methods
